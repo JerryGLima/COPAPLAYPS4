@@ -225,15 +225,21 @@
         }
         
         async function sendLoginLink() {
-            const email = document.getElementById('email-input').value.trim();
-            if (!email) return showNotification('Por favor, insira um e-mail válido.', 'error', 'auth-notification-area');
-            const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
-            try {
-                await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-                window.localStorage.setItem('emailForSignIn', email);
-                showNotification(`Link de login enviado para ${email}. Verifique sua caixa de entrada!`, 'success', 'auth-notification-area');
-            } catch (error) { showNotification('Ocorreu um erro ao enviar o link. Tente novamente.', 'error', 'auth-notification-area'); }
-        }
+    const email = document.getElementById('email-input').value.trim();
+    if (!email) return showNotification('Por favor, insira um e-mail válido.', 'error', 'auth-notification-area');
+    const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
+    try {
+        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+        window.localStorage.setItem('emailForSignIn', email);
+        showNotification(`Link de login enviado para ${email}. Verifique sua caixa de entrada!`, 'success', 'auth-notification-area');
+    } catch (error) {
+        // --- INÍCIO DA MODIFICAÇÃO ---
+        console.error("Erro detalhado do Firebase ao enviar link:", error);
+        showNotification(`Erro ao enviar: ${error.code} - ${error.message}`, 'error', 'auth-notification-area');
+        // --- FIM DA MODIFICAÇÃO ---
+    }
+}
+
 
         function updateUserInfo(user) {
             const userInfoDiv = document.getElementById('user-info');
