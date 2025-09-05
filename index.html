@@ -33,7 +33,7 @@
         <!-- Seção de Autenticação -->
         <div id="auth-container" style="display: none;">
              <div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg text-center">
-                <img src="imagem\logo.png" alt="Logo do Torneio" class="mx-auto mb-4 h-24 w-24 rounded-full">
+                <img src="https://placehold.co/128x128/ef4444/ffffff?text=LOGO" alt="Logo do Torneio" class="mx-auto mb-4 h-24 w-24 rounded-full">
                 <h1 class="text-2xl font-bold text-gray-900">Bem-vindo à Copa Digital</h1>
                 <p class="text-gray-600 mt-2 mb-6">Faça login ou cadastre-se com seu e-mail para gerenciar seu torneio.</p>
                 <div id="auth-notification-area" class="mb-4"></div>
@@ -51,7 +51,7 @@
             <header class="text-center mb-10 relative">
                  <div id="user-info" class="absolute top-0 right-0 text-right text-sm"></div>
 
-                <img src="imagem\logo.png" alt="Logo do Torneio" class="mx-auto mb-4 h-24 w-24 rounded-full">
+                <img src="https://placehold.co/128x128/ef4444/ffffff?text=LOGO" alt="Logo do Torneio" class="mx-auto mb-4 h-24 w-24 rounded-full">
                 <h1 class="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">Copa Digital de E-Futebol</h1>
                 <p id="tournament-mode-indicator" class="text-gray-600 mt-2 text-lg">Acompanhe a fase de grupos e as eliminatórias!</p>
             </header>
@@ -141,33 +141,34 @@
         import { getAuth, onAuthStateChanged, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, setLogLevel, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO DO FIREBASE ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyADVsS_wCzlQv-mVRLf_tZOq7suWavbYTw",
-            authDomain: "copa-play-ps4.firebaseapp.com",
-            projectId: "copa-play-ps4",
-            storageBucket: "copa-play-ps4.appspot.com",
-            messagingSenderId: "204861096387",
-            appId: "1:204861096387:web:69fdef9e45f54eae487d76"
-        };
-
-        // Inicializa o Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = firebaseConfig.appId;
-        setLogLevel('debug');
-
         // --- Variáveis Globais ---
         let tournamentData = { groups: {}, matches: {}, knockout: {} };
         let isKnockoutGenerated = false;
         let confirmCallback = null;
-        let userId;
+        let auth, db, userId;
         let isReadOnly = false;
         const loadingOverlay = document.getElementById('loading-overlay');
 
         // --- INICIALIZAÇÃO E AUTENTICAÇÃO ---
         document.addEventListener('DOMContentLoaded', () => {
+            const firebaseConfig = {
+              apiKey: "AIzaSyADVsS_wCzlQv-mVRLf_tZOq7suWavbYTw",
+              authDomain: "copa-play-ps4.firebaseapp.com",
+              projectId: "copa-play-ps4",
+              storageBucket: "copa-play-ps4.appspot.com",
+              messagingSenderId: "204861096387",
+              appId: "1:204861096387:web:69fdef9e45f54eae487d76"
+            };
+
+            if (!firebaseConfig || !firebaseConfig.apiKey) {
+                document.body.innerHTML = '<div class="text-center p-8 text-red-600">Erro: Configuração do Firebase não encontrada.</div>';
+                return;
+            }
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            setLogLevel('debug');
+            
             const urlParams = new URLSearchParams(window.location.search);
             const viewTournamentId = urlParams.get('view');
             
@@ -249,6 +250,8 @@
         // --- LÓGICA DE DADOS (FIRESTORE) ---
         async function savePrivateData() {
             if (!userId) return;
+            // NOTE: The __app_id variable is specific to the dev environment. For a standalone app, you might hardcode an ID or handle it differently.
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             const docRef = doc(db, 'artifacts', appId, 'users', userId, 'data', 'mainTournament');
             try {
                 await setDoc(docRef, { ...tournamentData, ownerId: userId });
@@ -258,6 +261,7 @@
         async function loadPrivateData() {
             loadingOverlay.style.display = 'flex';
             if (!userId) return;
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             const docRef = doc(db, 'artifacts', appId, 'users', userId, 'data', 'mainTournament');
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
@@ -271,6 +275,7 @@
 
         async function loadPublicData(tournamentId) {
             loadingOverlay.style.display = 'flex';
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             const docRef = doc(db, 'artifacts', appId, 'public/data/tournaments', tournamentId);
             try {
                 const docSnap = await getDoc(docRef);
@@ -290,17 +295,16 @@
         }
 
         async function resetTournament() {
-            showConfirmationModal("Tem certeza que deseja resetar todo o torneio? Esta ação não pode ser desfeita.", async () => {
-                if (userId) {
-                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'data', 'mainTournament');
-                    try { await deleteDoc(docRef); } catch (error) { console.error("Erro ao deletar dados:", error); }
-                }
+             showConfirmationModal("Tem certeza que deseja resetar todo o torneio? Todos os dados serão perdidos.", async () => {
+                tournamentData = { groups: {}, matches: {}, knockout: {}, ownerId: userId };
+                await savePrivateData();
                 resetUIState();
-                showNotification("Torneio resetado com sucesso!", "success");
+                showNotification("O torneio foi resetado.", "success");
             });
         }
         
         async function shareTournament() {
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             const publicId = tournamentData.publicId || doc(collection(db, '_')).id;
             const publicDocRef = doc(db, 'artifacts', appId, 'public/data/tournaments', publicId);
             
@@ -324,37 +328,51 @@
         function copyShareLink() {
             const linkInput = document.getElementById('share-link-input');
             linkInput.select();
-            linkInput.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(linkInput.value);
+            document.execCommand('copy');
             showNotification("Link copiado para a área de transferência!", "success");
         }
 
+        // --- RENDERIZAÇÃO E LÓGICA DO TORNEIO ---
         function renderAll() {
+            isKnockoutGenerated = tournamentData.knockout && tournamentData.knockout.quarterFinals && tournamentData.knockout.quarterFinals.length > 0;
+            if (tournamentData.groups && Object.keys(tournamentData.groups).length > 0) {
+                document.getElementById('group-stage').style.display = 'block';
+                document.getElementById('advance-btn-container').style.display = 'block';
+            } else {
+                 document.getElementById('group-stage').style.display = 'none';
+                document.getElementById('advance-btn-container').style.display = 'none';
+            }
+            if(isKnockoutGenerated) {
+                document.getElementById('knockout-stage').style.display = 'block';
+                renderKnockout();
+            } else {
+                document.getElementById('knockout-stage').style.display = 'none';
+            }
+             if (tournamentData.publicId) {
+                document.getElementById('share-tournament-btn').textContent = "Atualizar Link Público";
+            }
             renderGroups();
-            renderKnockout();
-            enterReadOnlyMode();
+            if (isReadOnly) enterReadOnlyMode();
         }
 
         function enterReadOnlyMode() {
-            if (!isReadOnly) return;
-            document.getElementById('tournament-mode-indicator').textContent = "Visualização Pública - Somente Leitura";
             document.getElementById('setup-stage').style.display = 'none';
+            document.getElementById('advance-btn-container').style.display = 'none';
+            document.getElementById('user-info').style.display = 'none';
             document.getElementById('share-section').style.display = 'none';
-            document.querySelectorAll('button:not(#close-share-modal-btn):not(#copy-link-btn)').forEach(btn => btn.style.display = 'none');
-            document.querySelectorAll('input').forEach(input => input.disabled = true);
-        }
-
-        function showNotification(message, type = 'info', containerId = 'notification-area') {
-            const container = document.getElementById(containerId);
-            const bgColor = type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-blue-100 border-blue-400 text-blue-700';
-            container.innerHTML = `<div class="border px-4 py-3 rounded ${bgColor}" role="alert"><span class="block sm:inline">${message}</span></div>`;
-            setTimeout(() => container.innerHTML = '', 5000);
+            document.getElementById('tournament-mode-indicator').textContent = "Modo de Visualização";
+            document.querySelectorAll('input, button').forEach(el => {
+                if(!['confirm-cancel-btn', 'confirm-action-btn', 'close-share-modal-btn', 'copy-link-btn'].includes(el.id)){
+                    el.disabled = true;
+                }
+            });
+             document.querySelectorAll('.edit-group-name-btn, .delete-group-btn, .edit-team-name-btn, .remove-team-btn, .add-team-form').forEach(el => el.remove());
         }
 
         function showConfirmationModal(message, callback) {
             document.getElementById('confirmation-message').textContent = message;
-            document.getElementById('confirmation-modal').style.display = 'flex';
             confirmCallback = callback;
+            document.getElementById('confirmation-modal').style.display = 'flex';
         }
 
         function closeConfirmationModal() {
@@ -362,216 +380,134 @@
             confirmCallback = null;
         }
 
-        // --- LÓGICA DOS GRUPOS ---
+        function showNotification(message, type = 'error', areaId = 'notification-area') {
+            const notificationArea = document.getElementById(areaId);
+            if (!notificationArea) return;
+            const bgColor = type === 'error' ? 'bg-red-500' : 'bg-green-500';
+            const notification = `<div class="${bgColor} text-white text-sm font-bold px-4 py-3 rounded-lg relative" role="alert"><span class="block sm:inline">${message}</span></div>`;
+            notificationArea.innerHTML = notification;
+            setTimeout(() => { notificationArea.innerHTML = ''; }, 5000);
+        }
+
         function addGroup() {
-            const groupName = document.getElementById('group-name-input').value.trim().toUpperCase();
-            const teamNamesInput = document.getElementById('team-names-input').value.trim();
-            
-            if (!groupName) return showNotification("Por favor, insira o nome do grupo.");
-            if (!teamNamesInput) return showNotification("Por favor, insira os nomes dos times.");
-            
-            const groupKey = groupName.replace("GRUPO ", "");
-            if (tournamentData.groups[groupKey]) return showNotification("Este grupo já existe.");
-            
-            const teamNames = teamNamesInput.split(',').map(name => name.trim()).filter(name => name);
-            if (teamNames.length < 2) return showNotification("É necessário pelo menos 2 times por grupo.");
-            
-            tournamentData.groups[groupKey] = { name: `Grupo ${groupKey}`, teams: teamNames };
+            const groupNameInput = document.getElementById('group-name-input');
+            const teamNamesInput = document.getElementById('team-names-input');
+            const groupKey = groupNameInput.value.trim().toUpperCase().replace("GRUPO ", "");
+            const teams = teamNamesInput.value.split(',').map(t => t.trim()).filter(t => t);
+
+            if (!groupKey || teams.length < 2 || (tournamentData.groups && tournamentData.groups[groupKey])) return;
+            document.getElementById('group-stage').style.display = 'block';
+            document.getElementById('advance-btn-container').style.display = 'block';
+            if(!tournamentData.groups) tournamentData.groups = {};
+            tournamentData.groups[groupKey] = { name: `Grupo ${groupKey}`, teams: teams };
             generateGroupMatches(groupKey);
-            
-            document.getElementById('group-name-input').value = '';
-            document.getElementById('team-names-input').value = '';
-            
-            savePrivateData();
             renderGroups();
-            showNotification(`${tournamentData.groups[groupKey].name} adicionado com sucesso!`, "success");
+            savePrivateData();
+            groupNameInput.value = ''; teamNamesInput.value = ''; groupNameInput.focus();
         }
 
         function generateGroupMatches(groupKey) {
-            const teams = tournamentData.groups[groupKey].teams;
-            const matches = [];
+            const { teams } = tournamentData.groups[groupKey];
+            if(!tournamentData.matches) tournamentData.matches = {};
+            tournamentData.matches[groupKey] = [];
             for (let i = 0; i < teams.length; i++) {
                 for (let j = i + 1; j < teams.length; j++) {
-                    matches.push({ teamA: teams[i], teamB: teams[j], scoreA: null, scoreB: null });
+                    tournamentData.matches[groupKey].push({ teamA: teams[i], teamB: teams[j], scoreA: null, scoreB: null });
                 }
             }
-            tournamentData.matches[groupKey] = matches;
         }
-
+        
         function calculateStandings(groupKey) {
-            const teams = tournamentData.groups[groupKey].teams;
-            const matches = tournamentData.matches[groupKey] || [];
-            const standings = teams.map(team => ({ name: team, points: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, wins: 0, draws: 0, losses: 0 }));
-            
+            const teams = (tournamentData.groups[groupKey] && tournamentData.groups[groupKey].teams) ? tournamentData.groups[groupKey].teams : [];
+            const matches = (tournamentData.matches && tournamentData.matches[groupKey]) ? tournamentData.matches[groupKey] : [];
+            let standings = teams.map(name => ({ name, P: 0, J: 0, V: 0, E: 0, D: 0, GP: 0, GC: 0, SG: 0 }));
             matches.forEach(match => {
-                if (match.scoreA !== null && match.scoreB !== null) {
-                    const teamAIndex = standings.findIndex(t => t.name === match.teamA);
-                    const teamBIndex = standings.findIndex(t => t.name === match.teamB);
-                    
-                    standings[teamAIndex].goalsFor += match.scoreA;
-                    standings[teamAIndex].goalsAgainst += match.scoreB;
-                    standings[teamBIndex].goalsFor += match.scoreB;
-                    standings[teamBIndex].goalsAgainst += match.scoreA;
-                    
-                    if (match.scoreA > match.scoreB) {
-                        standings[teamAIndex].points += 3;
-                        standings[teamAIndex].wins++;
-                        standings[teamBIndex].losses++;
-                    } else if (match.scoreA < match.scoreB) {
-                        standings[teamBIndex].points += 3;
-                        standings[teamBIndex].wins++;
-                        standings[teamAIndex].losses++;
-                    } else {
-                        standings[teamAIndex].points += 1;
-                        standings[teamBIndex].points += 1;
-                        standings[teamAIndex].draws++;
-                        standings[teamBIndex].draws++;
-                    }
-                }
+                if (match.scoreA === null || match.scoreB === null || isNaN(match.scoreA) || isNaN(match.scoreB)) return;
+                const teamA = standings.find(t => t.name === match.teamA);
+                const teamB = standings.find(t => t.name === match.teamB);
+                if(!teamA || !teamB) return;
+                teamA.J++; teamB.J++;
+                teamA.GP += match.scoreA; teamB.GP += match.scoreB;
+                teamA.GC += match.scoreB; teamB.GC += match.scoreA;
+                teamA.SG = teamA.GP - teamA.GC; teamB.SG = teamB.GP - teamB.GC;
+                if (match.scoreA > match.scoreB) { teamA.V++; teamB.D++; teamA.P += 3; } 
+                else if (match.scoreB > match.scoreA) { teamB.V++; teamA.D++; teamB.P += 3; } 
+                else { teamA.E++; teamB.E++; teamA.P += 1; teamB.P += 1; }
             });
-            
-            standings.forEach(team => team.goalDifference = team.goalsFor - team.goalsAgainst);
-            return standings.sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference || b.goalsFor - a.goalsFor);
+            return standings.sort((a, b) => b.P - a.P || b.SG - a.SG || b.GP - a.GP);
         }
 
         function renderGroups() {
             const container = document.getElementById('groups-container');
-            const groupKeys = Object.keys(tournamentData.groups);
-            
-            if (groupKeys.length === 0) {
-                document.getElementById('group-stage').style.display = 'none';
-                document.getElementById('advance-btn-container').style.display = 'none';
-                return;
-            }
-            
-            document.getElementById('group-stage').style.display = 'block';
             container.innerHTML = '';
+            const sortedGroupKeys = tournamentData.groups ? Object.keys(tournamentData.groups).sort() : [];
             
-            let allMatchesCompleted = true;
-            
-            for (const groupKey of groupKeys) {
+            for (const groupKey of sortedGroupKeys) {
                 const group = tournamentData.groups[groupKey];
-                const matches = tournamentData.matches[groupKey] || [];
                 const standings = calculateStandings(groupKey);
-                
-                const groupMatches = matches.some(m => m.scoreA === null || m.scoreB === null);
-                if (groupMatches) allMatchesCompleted = false;
-                
-                const matchesHtml = matches.map((match, index) => `
-                    <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                        <div class="flex-1 text-sm">${match.teamA}</div>
-                        <div class="flex items-center space-x-2">
-                            <input type="number" min="0" class="score-input bg-gray-100 border border-gray-300 w-12 text-center rounded" data-match-index="${index}" data-team="A" value="${match.scoreA !== null ? match.scoreA : ''}" ${isReadOnly ? 'disabled' : ''}>
-                            <span class="text-gray-500">x</span>
-                            <input type="number" min="0" class="score-input bg-gray-100 border border-gray-300 w-12 text-center rounded" data-match-index="${index}" data-team="B" value="${match.scoreB !== null ? match.scoreB : ''}" ${isReadOnly ? 'disabled' : ''}>
-                        </div>
-                        <div class="flex-1 text-sm text-right">${match.teamB}</div>
-                    </div>
-                `).join('');
-                
-                const standingsHtml = standings.map((team, index) => `
-                    <tr class="${index < 2 ? 'bg-green-50' : ''}">
-                        <td class="px-2 py-1 text-sm font-medium">${index + 1}º</td>
-                        <td class="px-2 py-1 text-sm">${team.name}</td>
-                        <td class="px-2 py-1 text-sm text-center">${team.points}</td>
-                        <td class="px-2 py-1 text-sm text-center">${team.wins + team.draws + team.losses}</td>
-                        <td class="px-2 py-1 text-sm text-center">${team.wins}</td>
-                        <td class="px-2 py-1 text-sm text-center">${team.draws}</td>
-                        <td class="px-2 py-1 text-sm text-center">${team.losses}</td>
-                        <td class="px-2 py-1 text-sm text-center">${team.goalsFor}</td>
-                        <td class="px-2 py-1 text-sm text-center">${team.goalsAgainst}</td>
-                        <td class="px-2 py-1 text-sm text-center font-medium">${team.goalDifference > 0 ? '+' : ''}${team.goalDifference}</td>
-                    </tr>
-                `).join('');
-                
+                const matches = (tournamentData.matches && tournamentData.matches[groupKey]) ? tournamentData.matches[groupKey] : [];
                 const groupCard = document.createElement('div');
-                groupCard.className = 'bg-white p-6 rounded-xl shadow-lg border border-gray-200';
+                groupCard.className = 'bg-white p-5 rounded-xl shadow-lg border border-gray-200';
                 groupCard.dataset.groupKey = groupKey;
-                groupCard.innerHTML = `
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-xl font-bold text-gray-900">${group.name}</h3>
-                        ${!isReadOnly ? `
+                const editDisabled = isKnockoutGenerated || isReadOnly ? 'disabled' : '';
+                const editClasses = isKnockoutGenerated || isReadOnly ? 'opacity-50 cursor-not-allowed' : 'text-gray-400 hover:text-red-600';
+                
+                let matchesHtml = matches.map((match, index) => `
+                    <div class="flex items-center justify-between space-x-2 py-2 border-b border-gray-200 last:border-b-0">
+                        <span class="flex-1 text-right">${match.teamA}</span>
+                        <input type="number" min="0" class="score-input bg-gray-100 border border-gray-300 w-12 text-center rounded" data-match-index="${index}" data-team="A" value="${match.scoreA !== null ? match.scoreA : ''}" ${editDisabled}>
+                        <span class="font-bold">vs</span>
+                        <input type="number" min="0" class="score-input bg-gray-100 border border-gray-300 w-12 text-center rounded" data-match-index="${index}" data-team="B" value="${match.scoreB !== null ? match.scoreB : ''}" ${editDisabled}>
+                        <span class="flex-1 text-left">${match.teamB}</span>
+                    </div>`).join('');
+                
+                 groupCard.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="group-title-container text-xl font-bold text-gray-900">${group.name}</div>
+                        ${!isReadOnly ? `<div class="flex items-center space-x-1">
+                            <button class="edit-group-name-btn p-1 ${editClasses}" data-group-key="${groupKey}" ${editDisabled}>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                            </button>
+                            <button class="delete-group-btn p-1 ${editClasses}" data-group-key="${groupKey}" ${editDisabled}>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                        </div>` : ''}
+                    </div>
+                    <div class="overflow-x-auto mb-4">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-500 uppercase bg-gray-50"><tr><th class="px-3 py-2">#</th><th class="px-3 py-2">Time</th><th class="px-3 py-2 text-center">P</th><th class="px-3 py-2 text-center">J</th><th class="px-3 py-2 text-center">V</th><th class="px-3 py-2 text-center">E</th><th class="px-3 py-2 text-center">D</th><th class="px-3 py-2 text-center">GP</th><th class="px-3 py-2 text-center">GC</th><th class="px-3 py-2 text-center">SG</th></tr></thead>
+                            <tbody>
+                                ${standings.map((team, index) => `
+                                    <tr class="border-b border-gray-200 ${index < 2 ? 'bg-red-50' : ''}">
+                                        <td class="px-3 py-2">${index + 1}</td>
+                                        <td class="px-3 py-2 font-medium">
+                                            <div class="flex justify-between items-center group team-name-container">
+                                                <span>${team.name}</span>
+                                                ${!isReadOnly ? `<div class="flex items-center">
+                                                    <button class="edit-team-name-btn p-1 ${editClasses} opacity-0 group-hover:opacity-100 transition-opacity" data-team-name="${team.name}" ${editDisabled}>
+                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                                                    </button>
+                                                    <button class="remove-team-btn p-1 text-red-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" data-team-name="${team.name}" ${editDisabled}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                    </button>
+                                                </div>` : ''}
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-2 text-center">${team.P}</td><td class="px-3 py-2 text-center">${team.J}</td><td class="px-3 py-2 text-center">${team.V}</td><td class="px-3 py-2 text-center">${team.E}</td><td class="px-3 py-2 text-center">${team.D}</td><td class="px-3 py-2 text-center">${team.GP}</td><td class="px-3 py-2 text-center">${team.GC}</td><td class="px-3 py-2 text-center">${team.SG}</td>
+                                    </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div><h4 class="font-semibold mb-2">Partidas</h4><div class="space-y-2">${matchesHtml}</div><button class="update-scores-btn mt-4 w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded" ${editDisabled}>Atualizar Tabela</button></div>
+                    ${!isReadOnly ? `<div class="add-team-form mt-4 pt-4 border-t border-gray-200 ${isKnockoutGenerated ? 'hidden' : ''}">
+                        <p class="text-sm font-semibold mb-2 text-gray-700">Adicionar novo time</p>
                         <div class="flex space-x-2">
-                            <button class="edit-group-name-btn p-1 text-blue-600 hover:text-blue-800" title="Editar nome do grupo">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
-                            </button>
-                            <button class="delete-group-btn p-1 text-red-600 hover:text-red-800" title="Excluir grupo">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9zM4 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 112 0v4a1 1 0 11-2 0V9zm4 0a1 1 0 112 0v4a1 1 0 11-2 0V9z" clip-rule="evenodd" /></svg>
-                            </button>
+                            <input type="text" class="add-team-input flex-grow bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2" placeholder="Nome do Time">
+                            <button class="add-team-btn bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Adicionar</button>
                         </div>
-                        ` : ''}
-                    </div>
-                    
-                    <div class="mb-6">
-                        <h4 class="font-semibold text-gray-700 mb-3">Times:</h4>
-                        <div class="space-y-2">
-                            ${group.teams.map(team => `
-                                <div class="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                    <span class="text-sm">${team}</span>
-                                    ${!isReadOnly ? `
-                                    <div class="flex space-x-1">
-                                        <button class="edit-team-name-btn p-1 text-blue-600 hover:text-blue-800" data-team-name="${team}" title="Editar nome do time">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
-                                        </button>
-                                        <button class="remove-team-btn p-1 text-red-600 hover:text-red-800" data-team-name="${team}" title="Remover time">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                                        </button>
-                                    </div>
-                                    ` : ''}
-                                </div>
-                            `).join('')}
-                        </div>
-                        ${!isReadOnly ? `
-                        <div class="mt-3 flex items-center space-x-2">
-                            <input type="text" class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block flex-1 p-2" placeholder="Nome do novo time">
-                            <button class="add-team-btn bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Adicionar</button>
-                        </div>
-                        ` : ''}
-                    </div>
-                    
-                    <div class="mb-6">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-semibold text-gray-700">Jogos:</h4>
-                            ${!isReadOnly ? `<button class="update-scores-btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm">Atualizar</button>` : ''}
-                        </div>
-                        <div class="space-y-2">
-                            ${matchesHtml}
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <h4 class="font-semibold text-gray-700 mb-3">Classificação:</h4>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-xs">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-2 py-2 text-left">Pos</th>
-                                        <th class="px-2 py-2 text-left">Time</th>
-                                        <th class="px-2 py-2 text-center">Pts</th>
-                                        <th class="px-2 py-2 text-center">J</th>
-                                        <th class="px-2 py-2 text-center">V</th>
-                                        <th class="px-2 py-2 text-center">E</th>
-                                        <th class="px-2 py-2 text-center">D</th>
-                                        <th class="px-2 py-2 text-center">GP</th>
-                                        <th class="px-2 py-2 text-center">GC</th>
-                                        <th class="px-2 py-2 text-center">SG</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${standingsHtml}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    </div>` : ''}
                 `;
                 container.appendChild(groupCard);
-            }
-            
-            const advanceContainer = document.getElementById('advance-btn-container');
-            if (allMatchesCompleted && groupKeys.length >= 2 && !isKnockoutGenerated && !isReadOnly) {
-                advanceContainer.style.display = 'block';
-            } else {
-                advanceContainer.style.display = 'none';
             }
         }
         
@@ -724,8 +660,6 @@
             const data = tournamentData.knockout;
             if (!data || !data.quarterFinals || data.quarterFinals.length === 0) return;
 
-            document.getElementById('knockout-stage').style.display = 'block';
-
             const qfWinners = data.quarterFinals.map(m => (m.scoreA !== null && m.scoreB !== null) ? (m.scoreA > m.scoreB ? m.teamA : m.teamB) : null);
             for (let i = 0; i < data.semiFinals.length; i++) {
                 data.semiFinals[i].teamA = qfWinners[i * 2] || `Vencedor J${i * 2 + 1}`;
@@ -774,8 +708,8 @@
             return `<div class="round flex flex-col ${justifyClass} min-w-[280px] relative"><h3 class="text-xl font-bold text-center mb-6 h-8">${title}</h3>${content}</div>`;
         }
         function createMatchupHTML(match, roundName, index, hasConnector, isLaterRound = false) {
-             const teamAClass = match.scoreA !== null && match.scoreA > match.scoreB ? 'winner' : '';
-             const teamBClass = match.scoreB !== null && match.scoreB > match.scoreA ? 'winner' : '';
+             const teamAClass = match.scoreA !== null && match.scoreB !== null && match.scoreA > match.scoreB ? 'winner' : '';
+             const teamBClass = match.scoreB !== null && match.scoreB !== null && match.scoreB > match.scoreA ? 'winner' : '';
              let connectorHtml = '';
              if (isLaterRound) connectorHtml += `<div class="connector line"></div><div class="round-connector"></div>`;
              else if (hasConnector) connectorHtml = `<div class="connector top"></div><div class="connector bottom"></div>`;
