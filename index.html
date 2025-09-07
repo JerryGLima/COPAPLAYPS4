@@ -33,8 +33,8 @@
         <!-- Seção de Autenticação -->
         <div id="auth-container" style="display: none;">
              <div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg text-center">
-                <img src="C:\Users\JERRY GLEYDISON\OneDrive\Área de Trabalho\COPA PS4\imagem\logo.png" alt="Logo do Torneio" class="mx-auto mb-4 h-24 w-24 rounded-full">
-                <h1 class="text-2xl font-bold text-gray-900">Torneio Virtual PK</h1>
+                <img src="https://placehold.co/128x128/ef4444/ffffff?text=LOGO" alt="Logo do Torneio" class="mx-auto mb-4 h-24 w-24 rounded-full">
+                <h1 class="text-2xl font-bold text-gray-900">Bem-vindo à Copa Digital</h1>
                 <p class="text-gray-600 mt-2 mb-6">Faça login ou cadastre-se com seu e-mail para gerenciar seu torneio.</p>
                 <div id="auth-notification-area" class="mb-4"></div>
                 <div class="space-y-4">
@@ -152,12 +152,12 @@
         // --- INICIALIZAÇÃO E AUTENTICAÇÃO ---
         document.addEventListener('DOMContentLoaded', () => {
             const firebaseConfig = {
-                apiKey: "AIzaSyADVsS_wCzlQv-mVRLf_tZOq7suWavbYTw",
-                authDomain: "copa-play-ps4.firebaseapp.com",
-                projectId: "copa-play-ps4",
-                storageBucket: "copa-play-ps4.appspot.com",
-                messagingSenderId: "204861096387",
-                appId: "1:204861096387:web:69fdef9e45f54eae487d76"
+              apiKey: "AIzaSyADVsS_wCzlQv-mVRLf_tZOq7suWavbYTw",
+              authDomain: "copa-play-ps4.firebaseapp.com",
+              projectId: "copa-play-ps4",
+              storageBucket: "copa-play-ps4.appspot.com",
+              messagingSenderId: "204861096387",
+              appId: "1:204861096387:web:69fdef9e45f54eae487d76"
             };
 
             if (!firebaseConfig || !firebaseConfig.apiKey) {
@@ -224,27 +224,15 @@
             }
         }
         
-        // FUNÇÃO CORRIGIDA - Constrói URL limpa para evitar erro auth/unauthorized-continue-uri
         async function sendLoginLink() {
             const email = document.getElementById('email-input').value.trim();
             if (!email) return showNotification('Por favor, insira um e-mail válido.', 'error', 'auth-notification-area');
-
-            // Constrói a URL de redirecionamento de forma limpa, sem parâmetros extras
-            const currentUrl = `${window.location.origin}${window.location.pathname}`;
-
-            const actionCodeSettings = {
-                url: currentUrl, // Usa a URL limpa
-                handleCodeInApp: true
-            };
-
+            const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
             try {
                 await sendSignInLinkToEmail(auth, email, actionCodeSettings);
                 window.localStorage.setItem('emailForSignIn', email);
                 showNotification(`Link de login enviado para ${email}. Verifique sua caixa de entrada!`, 'success', 'auth-notification-area');
-            } catch (error) {
-                console.error("Erro detalhado do Firebase ao enviar link:", error);
-                showNotification(`Erro ao enviar: ${error.code} - ${error.message}`, 'error', 'auth-notification-area');
-            }
+            } catch (error) { showNotification('Ocorreu um erro ao enviar o link. Tente novamente.', 'error', 'auth-notification-area'); }
         }
 
         function updateUserInfo(user) {
@@ -478,28 +466,38 @@
                         <div class="group-title-container text-xl font-bold text-gray-900">${group.name}</div>
                         ${!isReadOnly ? `<div class="flex items-center space-x-1">
                             <button class="edit-group-name-btn p-1 ${editClasses}" data-group-key="${groupKey}" ${editDisabled}>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
                             </button>
                             <button class="delete-group-btn p-1 ${editClasses}" data-group-key="${groupKey}" ${editDisabled}>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9zM4 5a2 2 0 012-2v1a1 1 0 001 1h6a1 1 0 001-1V3a2 2 0 012 2v6.5l1.5 1.5A1 1 0 0117 12v-1a3 3 0 00-3-3V5a3 3 0 00-6 0v3a3 3 0 00-3 3v1a1 1 0 00.5 1.5L7 11.5V5z" clip-rule="evenodd" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             </button>
                         </div>` : ''}
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><h4 class="font-semibold mb-2">Classificação</h4><div class="space-y-1">${standings.map((team, index) => `
-                            <div class="flex justify-between items-center py-1 px-2 rounded ${index < 2 ? 'bg-green-100 text-green-800' : 'bg-gray-50'}">
-                                <div class="flex items-center space-x-2">
-                                    <span class="font-bold text-sm w-4">${index + 1}º</span>
-                                    <span class="team-name-container font-medium">${team.name}</span>
-                                    ${!isReadOnly ? `<button class="edit-team-name-btn p-0.5 ${editClasses}" data-team-name="${team.name}" ${editDisabled}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
-                                    </button>
-                                    <button class="remove-team-btn p-0.5 ${editClasses}" data-team-name="${team.name}" ${editDisabled}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                                    </button>` : ''}
-                                </div>
-                                <div class="text-xs text-gray-600">${team.P}pts | ${team.SG > 0 ? '+' : ''}${team.SG}</div>
-                            </div>`).join('')}</div></div>
+                    <div class="overflow-x-auto mb-4">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-500 uppercase bg-gray-50"><tr><th class="px-3 py-2">#</th><th class="px-3 py-2">Time</th><th class="px-3 py-2 text-center">P</th><th class="px-3 py-2 text-center">J</th><th class="px-3 py-2 text-center">V</th><th class="px-3 py-2 text-center">E</th><th class="px-3 py-2 text-center">D</th><th class="px-3 py-2 text-center">GP</th><th class="px-3 py-2 text-center">GC</th><th class="px-3 py-2 text-center">SG</th></tr></thead>
+                            <tbody>
+                                ${standings.map((team, index) => `
+                                    <tr class="border-b border-gray-200 ${index < 2 ? 'bg-red-50' : ''}">
+                                        <td class="px-3 py-2">${index + 1}</td>
+                                        <td class="px-3 py-2 font-medium">
+                                            <div class="flex justify-between items-center group team-name-container">
+                                                <span>${team.name}</span>
+                                                ${!isReadOnly ? `<div class="flex items-center">
+                                                    <button class="edit-team-name-btn p-1 ${editClasses} opacity-0 group-hover:opacity-100 transition-opacity" data-team-name="${team.name}" ${editDisabled}>
+                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                                                    </button>
+                                                    <button class="remove-team-btn p-1 text-red-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" data-team-name="${team.name}" ${editDisabled}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                    </button>
+                                                </div>` : ''}
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-2 text-center">${team.P}</td><td class="px-3 py-2 text-center">${team.J}</td><td class="px-3 py-2 text-center">${team.V}</td><td class="px-3 py-2 text-center">${team.E}</td><td class="px-3 py-2 text-center">${team.D}</td><td class="px-3 py-2 text-center">${team.GP}</td><td class="px-3 py-2 text-center">${team.GC}</td><td class="px-3 py-2 text-center">${team.SG}</td>
+                                    </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
                     <div><h4 class="font-semibold mb-2">Partidas</h4><div class="space-y-2">${matchesHtml}</div><button class="update-scores-btn mt-4 w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded" ${editDisabled}>Atualizar Tabela</button></div>
                     ${!isReadOnly ? `<div class="add-team-form mt-4 pt-4 border-t border-gray-200 ${isKnockoutGenerated ? 'hidden' : ''}">
                         <p class="text-sm font-semibold mb-2 text-gray-700">Adicionar novo time</p>
