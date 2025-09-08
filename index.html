@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campeonato de Futebol Digital (Versão Local)</title>
+    <title>Gerenciador de Campeonato de Futebol</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,12 +15,6 @@
         }
         .matchup { position: relative; }
         .round .matchup:not(:last-child ) { margin-bottom: 3rem; }
-        /* Connectors for knockout bracket */
-        .connector { position: absolute; width: 2rem; border-style: solid; border-color: #d1d5db; }
-        .connector.top { height: 50%; top: 0; left: -2rem; border-width: 0 0 2px 2px; border-bottom-left-radius: 0.5rem; }
-        .connector.bottom { height: 50%; bottom: 0; left: -2rem; border-width: 2px 0 0 2px; border-top-left-radius: 0.5rem; }
-        .connector.line { width: 2rem; height: 2px; top: 50%; left: -2rem; background-color: #d1d5db; }
-        .round-connector { position: absolute; left: -4rem; width: 2rem; height: calc(100% + 3rem); top: 50%; transform: translateY(-50%); border-style: solid; border-color: #d1d5db; border-width: 0 2px 0 0; }
         .winner { font-weight: 700; color: #b91c1c; }
     </style>
 </head>
@@ -32,12 +26,31 @@
 
     <div class="container mx-auto p-4 md:p-8">
         
-        <!-- Conteúdo Principal do App -->
-        <div id="app-container">
+        <!-- Tela de Login -->
+        <div id="login-stage">
+             <div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-200 mt-16">
+                <img src="https://placehold.co/96x96/EFEFEF/333333?text=🏆" alt="Logo do Torneio" class="mx-auto mb-6 h-24 w-24 rounded-full object-cover">
+                <h2 class="text-3xl font-bold text-center text-gray-900 mb-2">Acesse seu Torneio</h2>
+                <p class="text-center text-gray-600 mb-6">Insira seu e-mail para receber um link de acesso mágico. Sem senhas!</p>
+                <div id="login-notification-area" class="mb-4"></div>
+                <div class="space-y-4">
+                    <div>
+                        <label for="email-input" class="block mb-2 text-sm font-medium text-gray-700">E-mail</label>
+                        <input type="email" id="email-input" class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="seu@email.com" required>
+                    </div>
+                    <button id="send-magic-link-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                        Enviar Link Mágico
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conteúdo Principal do App (inicialmente oculto) -->
+        <div id="app-container" style="display: none;">
             <header class="text-center mb-10 relative">
-                <!-- IMAGEM DO LOGO FIXA -->
-                <img id="main-logo-img" src="imagem/logo.png" alt="Logo do Torneio" class="mx-auto mb-4 h-24 w-24 rounded-full object-cover">
-                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">Campeonado de Futebol Digital</h1>
+                 <div id="auth-status" class="absolute top-0 right-0 text-right text-sm"></div>
+                <img id="main-logo-img" src="https://placehold.co/96x96/EFEFEF/333333?text=🏆" alt="Logo do Torneio" class="mx-auto mb-4 h-24 w-24 rounded-full object-cover">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">Campeonato de Futebol Digital</h1>
                 <p id="tournament-mode-indicator" class="text-gray-600 mt-2 text-lg">Acompanhe a fase de grupos e as eliminatórias!</p>
             </header>
 
@@ -136,21 +149,128 @@
         </div>
     </div>
     
-    <script>
+    <!-- Scripts Firebase -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        // REMINDER: Replace with your actual Firebase config
+         const firebaseConfig = {
+    apiKey: "AIzaSyADVsS_wCzlQv-mVRLf_tZOq7suWavbYTw",
+    authDomain: "copa-play-ps4.firebaseapp.com",
+    projectId: "copa-play-ps4",
+    storageBucket: "copa-play-ps4.firebasestorage.app",
+    messagingSenderId: "204861096387",
+    appId: "1:204861096387:web:69fdef9e45f54eae487d76"
+  };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
         // --- Variáveis Globais ---
         let tournamentData = { groups: {}, matches: {}, knockout: {} };
         let isKnockoutGenerated = false;
         let confirmCallback = null;
         let confettiAnimationId;
+        let userId = null; // To store the logged-in user's ID
         const loadingOverlay = document.getElementById('loading-overlay');
+        const loginStage = document.getElementById('login-stage');
+        const appContainer = document.getElementById('app-container');
 
-        // --- INICIALIZAÇÃO ---
+        // --- INICIALIZAÇÃO E AUTENTICAÇÃO ---
         document.addEventListener('DOMContentLoaded', () => {
-            loadData();
+            handleMagicLinkSignIn();
             setupEventListeners();
+            
+            onAuthStateChanged(auth, async (user) => {
+                loadingOverlay.style.display = 'flex';
+                if (user) {
+                    // User is signed in
+                    userId = user.uid;
+                    loginStage.style.display = 'none';
+                    appContainer.style.display = 'block';
+                    updateAuthStatus(user);
+                    await loadDataFromFirestore();
+                } else {
+                    // User is signed out
+                    userId = null;
+                    loginStage.style.display = 'block';
+                    appContainer.style.display = 'none';
+                    resetUIState();
+                }
+                loadingOverlay.style.display = 'none';
+            });
         });
+        
+        async function handleMagicLinkSignIn() {
+            if (isSignInWithEmailLink(auth, window.location.href)) {
+                let email = window.localStorage.getItem('emailForSignIn');
+                if (!email) {
+                    email = window.prompt('Por favor, forneça seu e-mail para confirmação.');
+                }
+                loadingOverlay.style.display = 'flex';
+                try {
+                    await signInWithEmailLink(auth, email, window.location.href);
+                    window.localStorage.removeItem('emailForSignIn');
+                    // Clean the URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } catch (error) {
+                    console.error("Erro ao entrar com link mágico:", error);
+                    showNotification("Link inválido ou expirado. Tente novamente.", "error", "login-notification-area");
+                } finally {
+                    loadingOverlay.style.display = 'none';
+                }
+            }
+        }
 
+        async function sendMagicLink() {
+            const emailInput = document.getElementById('email-input');
+            const email = emailInput.value.trim();
+            if(!email) return showNotification("Por favor, insira um e-mail.", "error", "login-notification-area");
+
+            const actionCodeSettings = {
+                url: window.location.href,
+                handleCodeInApp: true,
+            };
+
+            loadingOverlay.style.display = 'flex';
+            try {
+                await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+                window.localStorage.setItem('emailForSignIn', email);
+                showNotification(`Link de acesso enviado para ${email}! Verifique sua caixa de entrada.`, "success", "login-notification-area");
+                emailInput.value = '';
+            } catch (error) {
+                console.error("Erro ao enviar link mágico:", error);
+                showNotification("Ocorreu um erro. Verifique o e-mail e tente novamente.", "error", "login-notification-area");
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+        
+        function signOutUser() {
+            signOut(auth).catch(error => console.error("Erro ao sair:", error));
+        }
+        
+        function updateAuthStatus(user) {
+            const statusDiv = document.getElementById('auth-status');
+            if (user) {
+                statusDiv.innerHTML = `
+                    <p class="font-medium">${user.email}</p>
+                    <button id="sign-out-btn" class="text-red-600 hover:underline">Sair</button>
+                `;
+                document.getElementById('sign-out-btn').addEventListener('click', signOutUser);
+            } else {
+                statusDiv.innerHTML = '';
+            }
+        }
+        
         function setupEventListeners() {
+            document.getElementById('send-magic-link-btn').addEventListener('click', sendMagicLink);
             document.getElementById('add-group-btn').addEventListener('click', addGroup);
             document.getElementById('advance-teams-btn').addEventListener('click', advanceTeamsToKnockout);
             document.getElementById('reset-tournament-btn').addEventListener('click', resetTournament);
@@ -164,8 +284,6 @@
             document.getElementById('logo-file-input').addEventListener('change', previewLogo);
             document.getElementById('cancel-logo-upload-btn').addEventListener('click', closeLogoUploadModal);
             document.getElementById('confirm-logo-upload-btn').addEventListener('click', saveLogo);
-            
-            // A funcionalidade de upload do logo principal foi removida.
         }
         
         function resetUIState() {
@@ -174,95 +292,74 @@
             renderAll();
         }
 
-        // --- LÓGICA DE DADOS (LOCALSTORAGE) ---
-        function saveData() {
+        // --- LÓGICA DE DADOS (FIRESTORE) ---
+        async function saveDataToFirestore() {
+            if (!userId) return;
+            loadingOverlay.style.display = 'flex';
             try {
-                localStorage.setItem('digitalTournamentData', JSON.stringify(tournamentData));
+                const userDocRef = doc(db, "tournaments", userId);
+                await setDoc(userDocRef, { data: JSON.stringify(tournamentData) });
             } catch (error) {
-                console.error("Erro ao salvar dados no localStorage:", error);
-                showNotification("Não foi possível salvar os dados localmente. O armazenamento pode estar cheio.", "error");
+                console.error("Erro ao salvar dados no Firestore:", error);
+                showNotification("Não foi possível salvar os dados na nuvem.", "error");
+            } finally {
+                loadingOverlay.style.display = 'none';
             }
         }
 
-        function loadData() {
+        async function loadDataFromFirestore() {
+            if (!userId) return;
             loadingOverlay.style.display = 'flex';
             try {
-                const data = localStorage.getItem('digitalTournamentData');
-                if (data) {
-                    tournamentData = JSON.parse(data);
-                    
-                    // --- MIGRAÇÃO DE DADOS ---
-                    let needsSave = false;
-                    if (tournamentData.groups) {
-                        const findTeamObject = (teamName) => {
-                            for (const group of Object.values(tournamentData.groups)) {
-                                const team = group.teams.find(t => t.name === teamName);
-                                if (team) return team;
-                            }
-                            return { name: teamName, logo: null };
-                        };
+                const userDocRef = doc(db, "tournaments", userId);
+                const docSnap = await getDoc(userDocRef);
 
-                        Object.values(tournamentData.groups).forEach(group => {
-                            if (group.teams && group.teams.length > 0 && typeof group.teams[0] === 'string') {
-                                needsSave = true;
-                                group.teams = group.teams.map(teamName => ({ name: teamName, logo: null }));
-                            }
-                        });
-
-                        if (tournamentData.matches) {
-                            Object.values(tournamentData.matches).forEach(matchList => {
-                                matchList.forEach(match => {
-                                    if (typeof match.teamA === 'string') { needsSave = true; match.teamA = findTeamObject(match.teamA); }
-                                    if (typeof match.teamB === 'string') { needsSave = true; match.teamB = findTeamObject(match.teamB); }
-                                });
-                            });
-                        }
-                        
-                        if (tournamentData.knockout) {
-                            ['quarterFinals', 'semiFinals', 'final'].forEach(round => {
-                                if (tournamentData.knockout[round]) {
-                                    tournamentData.knockout[round].forEach(match => {
-                                        if (match.teamA && typeof match.teamA === 'string') { needsSave = true; match.teamA = findTeamObject(match.teamA); }
-                                        if (match.teamB && typeof match.teamB === 'string') { needsSave = true; match.teamB = findTeamObject(match.teamB); }
-                                    });
-                                }
-                            });
-                        }
-                        if(needsSave) saveData();
+                if (docSnap.exists()) {
+                    const data = docSnap.data().data;
+                    if(data){
+                        tournamentData = JSON.parse(data);
+                    } else {
+                        tournamentData = { groups: {}, matches: {}, knockout: {} };
                     }
                 } else {
                     tournamentData = { groups: {}, matches: {}, knockout: {} };
                 }
-
-                // A funcionalidade de carregar o logo principal do localStorage foi removida.
-                // A imagem agora é fixa no HTML.
-
             } catch (error) {
-                 console.error("Erro ao carregar ou migrar dados do localStorage:", error);
+                 console.error("Erro ao carregar dados do Firestore:", error);
                  tournamentData = { groups: {}, matches: {}, knockout: {} };
+                 showNotification("Não foi possível carregar seus dados.", "error");
             }
             
             try {
                 renderAll();
             } catch (renderError) {
                 console.error("Erro fatal durante a renderização:", renderError);
-                document.body.innerHTML = `<div class="text-center p-8 text-red-600">Ocorreu um erro grave ao exibir o torneio. Por favor, tente <button onclick="localStorage.clear(); window.location.reload();" class="underline font-bold">resetar os dados</button>. Erro: ${renderError.message}</div>`;
+                appContainer.innerHTML = `<div class="text-center p-8 text-red-600">Ocorreu um erro grave ao exibir o torneio. Por favor, tente <button onclick="resetTournament()" class="underline font-bold">resetar os dados</button>. Erro: ${renderError.message}</div>`;
             } finally {
                 loadingOverlay.style.display = 'none';
             }
         }
         
         function resetTournament() {
-             showConfirmationModal("Tem certeza que deseja resetar todo o torneio? Todos os dados locais serão perdidos.", () => {
-                 localStorage.removeItem('digitalTournamentData');
-                 // Não removemos mais o logo, pois é fixo.
-                 document.getElementById('main-logo-img').src = 'COPA PS4/imagem/logo.png'; // Restaura o logo padrão
-                 resetUIState();
-                 showNotification("O torneio foi resetado.", "success");
+             showConfirmationModal("Tem certeza que deseja resetar todo o torneio? Todos os dados na nuvem serão perdidos.", async () => {
+                 resetUIState(); // Reset local state first
+                 if (!userId) return;
+                 loadingOverlay.style.display = 'flex';
+                 try {
+                     const userDocRef = doc(db, "tournaments", userId);
+                     await deleteDoc(userDocRef); // Or setDoc with empty data
+                     showNotification("O torneio foi resetado.", "success");
+                 } catch(e) {
+                     console.error("Error resetting document: ", e);
+                     showNotification("Erro ao resetar dados na nuvem.", "error");
+                 } finally {
+                     loadingOverlay.style.display = 'none';
+                     resetUIState(); // Re-render the empty state
+                 }
              });
         }
         
-        // --- RENDERIZAÇÃO E LÓGICA DO TORNEIO ---
+        // --- RENDERIZAÇÃO E LÓGICA DO TORNEIO (funções adaptadas para usar saveDataToFirestore) ---
         function renderAll() {
             isKnockoutGenerated = tournamentData.knockout && (tournamentData.knockout.quarterFinals?.length > 0 || tournamentData.knockout.semiFinals?.length > 0);
             if (tournamentData.groups && Object.keys(tournamentData.groups).length > 0) {
@@ -302,7 +399,7 @@
             setTimeout(() => { notificationArea.innerHTML = ''; }, 5000);
         }
 
-        function addGroup() {
+        async function addGroup() {
             const groupNameInput = document.getElementById('group-name-input');
             const teamNamesInput = document.getElementById('team-names-input');
             const groupKey = groupNameInput.value.trim().toUpperCase().replace("GRUPO ", "");
@@ -317,7 +414,7 @@
             if(!tournamentData.groups) tournamentData.groups = {};
             tournamentData.groups[groupKey] = { name: `Grupo ${groupKey}`, teams: teams };
             generateGroupMatches(groupKey);
-            saveData();
+            await saveDataToFirestore();
             renderGroups();
             groupNameInput.value = ''; teamNamesInput.value = ''; groupNameInput.focus();
         }
@@ -403,7 +500,7 @@
                     </div>
                     <div class="overflow-x-auto mb-4">
                         <table class="w-full text-sm text-left">
-                             <thead class="bg-gray-100 text-gray-600 uppercase">
+                              <thead class="bg-gray-100 text-gray-600 uppercase">
                                 <tr>
                                     <th class="px-4 py-2">Time</th>
                                     <th class="px-2 py-2 text-center">P</th>
@@ -457,7 +554,7 @@
             }
         }
 
-        function handleGroupCardInput(e) {
+        async function handleGroupCardInput(e) {
             if (!e.target.classList.contains('score-input')) return;
             const groupKey = e.target.closest('[data-group-key]').dataset.groupKey;
             const matchIndex = parseInt(e.target.dataset.matchIndex, 10);
@@ -468,11 +565,11 @@
             if (team === 'A') match.scoreA = isNaN(score) ? null : score;
             else match.scoreB = isNaN(score) ? null : score;
             
-            saveData();
+            await saveDataToFirestore();
             renderGroups();
         }
 
-        function handleGroupCardClick(e) {
+        async function handleGroupCardClick(e) {
             const target = e.target.closest('button');
             if (!target) return;
 
@@ -482,21 +579,21 @@
                 const newName = prompt("Digite o novo nome para o grupo:", tournamentData.groups[groupKey].name);
                 if (newName && newName.trim() !== "") {
                     tournamentData.groups[groupKey].name = newName.trim();
-                    saveData();
+                    await saveDataToFirestore();
                     renderGroups();
                 }
             } else if (target.classList.contains('delete-group-btn')) {
-                showConfirmationModal(`Tem certeza que deseja excluir o ${tournamentData.groups[groupKey].name}?`, () => {
+                showConfirmationModal(`Tem certeza que deseja excluir o ${tournamentData.groups[groupKey].name}?`, async () => {
                     delete tournamentData.groups[groupKey];
                     delete tournamentData.matches[groupKey];
-                    saveData();
+                    await saveDataToFirestore();
                     renderAll();
                 });
             } else if (target.classList.contains('add-team-btn')) {
                 const input = target.previousElementSibling;
                 const newTeamName = input.value.trim();
                 if (newTeamName) {
-                    addTeamToGroup(groupKey, newTeamName);
+                    await addTeamToGroup(groupKey, newTeamName);
                     input.value = '';
                 } else {
                     showNotification('O nome do novo time não pode estar vazio.', 'error');
@@ -505,12 +602,12 @@
                 const oldName = target.dataset.teamName;
                 const newName = prompt(`Digite o novo nome para "${oldName}":`, oldName);
                 if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
-                    editTeamName(groupKey, oldName, newName.trim());
+                    await editTeamName(groupKey, oldName, newName.trim());
                 }
             } else if (target.classList.contains('delete-team-btn')) {
                 const teamName = target.dataset.teamName;
-                showConfirmationModal(`Tem certeza que deseja excluir o time "${teamName}"? Todas as suas partidas no grupo serão removidas.`, () => {
-                    deleteTeamFromGroup(groupKey, teamName);
+                showConfirmationModal(`Tem certeza que deseja excluir o time "${teamName}"? Todas as suas partidas no grupo serão removidas.`, async () => {
+                    await deleteTeamFromGroup(groupKey, teamName);
                 });
             } else if (target.classList.contains('add-team-logo-btn')) {
                 const teamName = target.dataset.teamName;
@@ -549,21 +646,19 @@
             }
         }
 
-        function saveLogo() {
+        async function saveLogo() {
             const { groupKey, teamName } = logoUploadModal.dataset;
             const newLogoSrc = logoPreview.src;
 
-            // Não salva o placeholder, considera como "remover logo"
             if (newLogoSrc.startsWith('https://placehold.co')) {
-                 setTeamLogo(groupKey, teamName, null);
+                 await setTeamLogo(groupKey, teamName, null);
             } else {
-                setTeamLogo(groupKey, teamName, newLogoSrc);
+                 await setTeamLogo(groupKey, teamName, newLogoSrc);
             }
             closeLogoUploadModal();
         }
 
-
-        function addTeamToGroup(groupKey, newTeamName) {
+        async function addTeamToGroup(groupKey, newTeamName) {
             const group = tournamentData.groups[groupKey];
             if (group.teams.some(t => t.name === newTeamName)) {
                 showNotification(`O time "${newTeamName}" já existe neste grupo.`, 'error');
@@ -571,11 +666,11 @@
             }
             group.teams.push({ name: newTeamName, logo: null });
             generateGroupMatches(groupKey); // Regenerate matches for the group
-            saveData();
+            await saveDataToFirestore();
             renderGroups();
         }
 
-        function editTeamName(groupKey, oldName, newName) {
+        async function editTeamName(groupKey, oldName, newName) {
             const group = tournamentData.groups[groupKey];
             const matches = tournamentData.matches[groupKey];
 
@@ -594,18 +689,17 @@
                 if (match.teamB.name === oldName) match.teamB.name = newName;
             });
 
-            saveData();
-            renderAll(); // Use renderAll to update knockout if necessary
+            await saveDataToFirestore();
+            renderAll();
         }
         
-        function setTeamLogo(groupKey, teamName, logoDataUrl) {
+        async function setTeamLogo(groupKey, teamName, logoDataUrl) {
             const group = tournamentData.groups[groupKey];
             const team = group.teams.find(t => t.name === teamName);
             if (team) {
                 team.logo = logoDataUrl;
             }
 
-            // Atualiza o logo em todas as partidas existentes
             if (tournamentData.matches[groupKey]) {
                 tournamentData.matches[groupKey].forEach(match => {
                     if (match.teamA.name === teamName) match.teamA.logo = logoDataUrl;
@@ -613,28 +707,24 @@
                 });
             }
             
-            saveData();
+            await saveDataToFirestore();
             renderAll();
         }
 
-        function deleteTeamFromGroup(groupKey, teamNameToDelete) {
+        async function deleteTeamFromGroup(groupKey, teamNameToDelete) {
             const group = tournamentData.groups[groupKey];
             if (group.teams.length <= 2) {
                 showNotification('Um grupo precisa ter no mínimo 2 times. Se desejar, exclua o grupo inteiro.', 'error');
                 return;
             }
 
-            // Remove team from the list
             group.teams = group.teams.filter(t => t.name !== teamNameToDelete);
-            
-            // Regenerate matches for the group
             generateGroupMatches(groupKey);
-
-            saveData();
+            await saveDataToFirestore();
             renderGroups();
         }
 
-        function advanceTeamsToKnockout() {
+        async function advanceTeamsToKnockout() {
             if (isKnockoutGenerated) return showNotification("A fase eliminatória já foi gerada.", "error");
 
             const allGroupKeys = Object.keys(tournamentData.groups).sort();
@@ -648,7 +738,7 @@
                 if (standings.length < 2) {
                     return showNotification(`O Grupo ${groupKey} não tem times suficientes ou as partidas não foram preenchidas.`, "error");
                 }
-                qualifiedTeams.push(standings[0]); // Push the full team object
+                qualifiedTeams.push(standings[0]); 
                 qualifiedTeams.push(standings[1]);
             }
             
@@ -665,7 +755,7 @@
             }
 
             isKnockoutGenerated = true;
-            saveData();
+            await saveDataToFirestore();
             renderAll();
         }
         
@@ -673,23 +763,19 @@
             const { knockout } = tournamentData;
             if (!knockout) return;
 
-            // From Quarters to Semis
             if (knockout.quarterFinals && knockout.quarterFinals.length > 0) {
                 const quarterWinners = knockout.quarterFinals.map(match => 
                     (match.scoreA !== null && match.scoreB !== null && +match.scoreA !== +match.scoreB) 
                     ? (+match.scoreA > +match.scoreB ? match.teamA : match.teamB) 
                     : null
                 );
-
                 const numSemiFinals = knockout.quarterFinals.length / 2;
                 for (let i = 0; i < numSemiFinals; i++) {
                     const teamA = quarterWinners[i * 2];
                     const teamB = quarterWinners[i * 2 + 1];
-                    
                     if (!knockout.semiFinals[i]) {
                         knockout.semiFinals[i] = { teamA: null, teamB: null, scoreA: null, scoreB: null };
                     }
-                    
                     if ((knockout.semiFinals[i].teamA?.name !== teamA?.name) || (knockout.semiFinals[i].teamB?.name !== teamB?.name)) {
                         knockout.semiFinals[i].teamA = teamA;
                         knockout.semiFinals[i].teamB = teamB;
@@ -699,22 +785,18 @@
                 }
             }
 
-            // From Semis to Final
             if (knockout.semiFinals && knockout.semiFinals.length > 0) {
                 const semiWinners = knockout.semiFinals.map(match => 
                     (match.scoreA !== null && match.scoreB !== null && +match.scoreA !== +match.scoreB) 
                     ? (+match.scoreA > +match.scoreB ? match.teamA : match.teamB) 
                     : null
                 );
-                
                 if (semiWinners.length >= 2) {
                     const finalTeamA = semiWinners[0];
                     const finalTeamB = semiWinners[1];
-
                     if (!knockout.final[0]) {
                         knockout.final[0] = { teamA: null, teamB: null, scoreA: null, scoreB: null };
                     }
-
                     if ((knockout.final[0].teamA?.name !== finalTeamA?.name) || (knockout.final[0].teamB?.name !== finalTeamB?.name)) {
                         knockout.final[0].teamA = finalTeamA;
                         knockout.final[0].teamB = finalTeamB;
@@ -727,27 +809,21 @@
         
         function renderKnockout() {
             updateKnockoutStages();
-            
             const container = document.getElementById('knockout-container');
             container.innerHTML = '';
-            
             const rounds = ['quarterFinals', 'semiFinals', 'final'];
             const roundTitles = { quarterFinals: 'Quartas de Final', semiFinals: 'Semifinais', final: 'Final' };
             const teamLogo = (team) => `<img src="${team.logo || `https://placehold.co/24x24/cccccc/000000?text=${team.name.charAt(0)}`}" alt="Escudo ${team.name}" class="w-6 h-6 rounded-full object-cover mr-2">`;
-            
             for (const roundName of rounds) {
                 const roundData = tournamentData.knockout[roundName] || [];
                 if(roundData.length === 0) continue;
-
                 const roundDiv = document.createElement('div');
                 roundDiv.className = 'round flex flex-col justify-center space-y-12';
                 roundDiv.innerHTML = `<h3 class="text-xl font-bold text-center">${roundTitles[roundName]}</h3>`;
-
                 roundData.forEach((match, index) => {
                     const winner = (match.scoreA !== null && match.scoreB !== null && +match.scoreA !== +match.scoreB) ? (+match.scoreA > +match.scoreB ? match.teamA : match.teamB) : null;
                     const teamADisplay = match.teamA ? `<div class="flex items-center">${teamLogo(match.teamA)} <span class="truncate">${match.teamA.name}</span></div>` : 'A definir';
                     const teamBDisplay = match.teamB ? `<div class="flex items-center">${teamLogo(match.teamB)} <span class="truncate">${match.teamB.name}</span></div>` : 'A definir';
-
                     roundDiv.innerHTML += `
                         <div class="matchup bg-white p-3 rounded-lg shadow w-64" data-round="${roundName}" data-match-index="${index}">
                              <div class="flex items-center justify-between">
@@ -759,13 +835,10 @@
                                  <div class="flex-1 ${winner && winner.name === match.teamB?.name ? 'winner' : ''}">${teamBDisplay}</div>
                                 <input type="number" min="0" class="knockout-score-input w-12 text-center bg-gray-100 border rounded" data-team="B" value="${match.scoreB !== null ? match.scoreB : ''}" ${!match.teamA || !match.teamB ? 'disabled' : ''}>
                              </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
                 container.appendChild(roundDiv);
             }
-
-            // Check for champion
             const finalMatch = tournamentData.knockout.final && tournamentData.knockout.final[0];
             if (finalMatch && finalMatch.scoreA !== null && finalMatch.scoreB !== null && +finalMatch.scoreA !== +finalMatch.scoreB) {
                 const champion = +finalMatch.scoreA > +finalMatch.scoreB ? finalMatch.teamA : finalMatch.teamB;
@@ -778,37 +851,31 @@
             }
         }
 
-        function handleKnockoutInput(e) {
+        async function handleKnockoutInput(e) {
              if (!e.target.classList.contains('knockout-score-input')) return;
              const matchupDiv = e.target.closest('.matchup');
              const round = matchupDiv.dataset.round;
              const matchIndex = parseInt(matchupDiv.dataset.matchIndex, 10);
              const team = e.target.dataset.team;
              const score = parseInt(e.target.value, 10);
-             
              const match = tournamentData.knockout[round][matchIndex];
              if (team === 'A') match.scoreA = isNaN(score) ? null : score;
              else match.scoreB = isNaN(score) ? null : score;
-             
-             saveData();
+             await saveDataToFirestore();
              renderKnockout();
         }
 
         function triggerConfetti() {
-            if (confettiAnimationId) {
-                cancelAnimationFrame(confettiAnimationId);
-            }
+            if (confettiAnimationId) cancelAnimationFrame(confettiAnimationId);
             const canvas = document.getElementById('confetti-canvas');
             const ctx = canvas.getContext('2d');
             let particles = [];
             const particleCount = 200;
             const colors = ["#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e", "#14b8a6", "#06b6d4", "#3b82f6", "#8b5cf6"];
-
             function setupCanvas() {
                 canvas.width = canvas.offsetWidth;
                 canvas.height = canvas.offsetHeight;
             }
-
             class ConfettiParticle {
                 constructor() {
                     this.x = Math.random() * canvas.width;
@@ -820,7 +887,6 @@
                     this.rotation = Math.random() * 360;
                     this.rotationSpeed = Math.random() * 4 - 2;
                 }
-
                 update() {
                     this.y += this.speed;
                     this.speed += this.gravity;
@@ -832,7 +898,6 @@
                         this.speed = Math.random() * 5 + 2;
                     }
                 }
-
                 draw() {
                     ctx.save();
                     ctx.translate(this.x, this.y);
@@ -842,7 +907,6 @@
                     ctx.restore();
                 }
             }
-            
             function initConfetti() {
                 setupCanvas();
                 particles = [];
@@ -850,16 +914,11 @@
                     particles.push(new ConfettiParticle());
                 }
             }
-
             function animateConfetti() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                particles.forEach(p => {
-                    p.update();
-                    p.draw();
-                });
+                particles.forEach(p => { p.update(); p.draw(); });
                 confettiAnimationId = requestAnimationFrame(animateConfetti);
             }
-
             initConfetti();
             animateConfetti();
             window.addEventListener('resize', initConfetti, { passive: true });
@@ -867,3 +926,4 @@
     </script>
 </body>
 </html>
+
