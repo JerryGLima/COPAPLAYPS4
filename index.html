@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campeonato de Futebol Digital</title>
+    <title>Campeonato de Futebol Digital (Versão Local)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,24 +13,9 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6; /* bg-gray-100 */
         }
-        /* Estilos para desabilitar inputs para visitantes */
-        .read-only-mode input, .read-only-mode button:not(.logo-btn ) {
-            pointer-events: none;
-            opacity: 0.7;
-            background-color: #e5e7eb !important;
-        }
-        .read-only-mode .logo-btn { /* Permite clicar no logo mesmo em modo leitura */
-             pointer-events: auto;
-             opacity: 1;
-        }
-        .read-only-mode #setup-stage, 
-        .read-only-mode #advance-btn-container,
-        .read-only-mode .delete-group-btn {
-            display: none !important;
-        }
-        /* Styles for knockout bracket connectors (optional) */
         .matchup { position: relative; }
         .round .matchup:not(:last-child ) { margin-bottom: 3rem; }
+        /* Connectors for knockout bracket */
         .connector { position: absolute; width: 2rem; border-style: solid; border-color: #d1d5db; }
         .connector.top { height: 50%; top: 0; left: -2rem; border-width: 0 0 2px 2px; border-bottom-left-radius: 0.5rem; }
         .connector.bottom { height: 50%; bottom: 0; left: -2rem; border-width: 2px 0 0 2px; border-top-left-radius: 0.5rem; }
@@ -42,7 +27,7 @@
 <body class="text-gray-800">
 
     <div id="loading-overlay" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
-        <p class="text-xl font-semibold text-gray-700">Carregando dados do torneio...</p>
+        <p class="text-xl font-semibold text-gray-700">Carregando...</p>
     </div>
 
     <div class="container mx-auto p-4 md:p-8">
@@ -50,15 +35,10 @@
         <!-- Conteúdo Principal do App -->
         <div id="app-container">
             <header class="text-center mb-10 relative">
-                <!-- LOGO SVG EMBUTIDO -->
-                <div class="mx-auto mb-4 h-24 w-24 rounded-full bg-white shadow-md flex items-center justify-center">
-                    <svg class="w-16 h-16 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9a9.75 9.75 0 01-4.973-1.803 1.875 1.875 0 01-1.227-2.738M19.197 14.21a1.875 1.875 0 01-1.227 2.738 9.75 9.75 0 01-4.973 1.803h-9M15 21h-6a.75.75 0 01-.75-.75v-2.25a.75.75 0 01.75-.75h6a.75.75 0 01.75.75V20.25a.75.75 0 01-.75.75zM12 2.25c-3.131 0-5.666 2.343-6.425 5.354.744-.56 1.684-.879 2.675-.879h7.5c.991 0 1.931.32 2.675.879C17.666 4.593 15.131 2.25 12 2.25zM12 9a.75.75 0 01-.75-.75V3a.75.75 0 011.5 0v5.25A.75.75 0 0112 9zM3.75 9.75a3 3 0 013-3h10.5a3 3 0 013 3v3.375a3 3 0 01-3 3H6.75a3 3 0 01-3-3V9.75z" />
-                    </svg>
-                </div>
-                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">Campeonato de Futebol Digital</h1>
+                <!-- IMAGEM DO LOGO FIXA -->
+                <img id="main-logo-img" src="imagem/logo.png" alt="Logo do Torneio" class="mx-auto mb-4 h-24 w-24 rounded-full object-cover">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">Campeonado de Futebol Digital</h1>
                 <p id="tournament-mode-indicator" class="text-gray-600 mt-2 text-lg">Acompanhe a fase de grupos e as eliminatórias!</p>
-                <div id="admin-mode-indicator" class="hidden absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">MODO ADMIN</div>
             </header>
 
             <main>
@@ -77,7 +57,7 @@
                     <div id="notification-area" class="mb-4"></div>
                     <div class="space-y-4 md:flex md:space-y-0 md:space-x-4">
                         <div class="flex-1">
-                            <label for="group-name-input" class="block mb-2 text-sm font-medium text-gray-700">Nome do Grupo (Ex: A, B, C  )</label>
+                            <label for="group-name-input" class="block mb-2 text-sm font-medium text-gray-700">Nome do Grupo (Ex: A, B, C )</label>
                             <input type="text" id="group-name-input" class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5" placeholder="Grupo A">
                         </div>
                         <div class="flex-[3]">
@@ -114,9 +94,9 @@
                         <canvas id="confetti-canvas" class="absolute top-0 left-0 w-full h-full pointer-events-none"></canvas>
                         <div class="relative z-10">
                              <div class="flex justify-center items-center mb-4">
-                                <svg class="w-16 h-16 text-amber-400 drop-shadow-lg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                               <svg class="w-16 h-16 text-amber-400 drop-shadow-lg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                   <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9a9.75 9.75 0 01-4.973-1.803 1.875 1.875 0 01-1.227-2.738M19.197 14.21a1.875 1.875 0 01-1.227 2.738 9.75 9.75 0 01-4.973 1.803h-9M15 21h-6a.75.75 0 01-.75-.75v-2.25a.75.75 0 01.75-.75h6a.75.75 0 01.75.75V20.25a.75.75 0 01-.75.75zM12 2.25c-3.131 0-5.666 2.343-6.425 5.354.744-.56 1.684-.879 2.675-.879h7.5c.991 0 1.931.32 2.675.879C17.666 4.593 15.131 2.25 12 2.25zM12 9a.75.75 0 01-.75-.75V3a.75.75 0 011.5 0v5.25A.75.75 0 0112 9zM3.75 9.75a3 3 0 013-3h10.5a3 3 0 013 3v3.375a3 3 0 01-3 3H6.75a3 3 0 01-3-3V9.75z" />
-                                 </svg>
+                                </svg>
                             </div>
                             <h2 class="text-2xl font-bold text-gray-600 uppercase tracking-widest">O Grande Campeão</h2>
                             <p id="champion-name" class="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-amber-500 my-4"></p>
@@ -141,6 +121,7 @@
         </div>
     </div>
     
+    <!-- Modal de Upload de Logo -->
     <div id="logo-upload-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
         <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
             <h3 class="text-lg font-bold mb-4">Escolher Escudo do Time</h3>
@@ -154,128 +135,37 @@
             </div>
         </div>
     </div>
-
-    <script type="module">
-        // --- Importações do Firebase ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+    
+    <script>
         // --- Variáveis Globais ---
         let tournamentData = { groups: {}, matches: {}, knockout: {} };
         let isKnockoutGenerated = false;
         let confirmCallback = null;
         let confettiAnimationId;
-        const loadingOverlay = document.getElementById('loading-overlay' );
-        let saveDataDebounceTimer;
-        let isAdmin = false; // NOVA VARIÁVEL: Controla o modo admin
-
-        // --- Variáveis do Firebase ---
-        let db, auth, tournamentDocRef;
-        let unsubscribeFirestore = () => {};
+        const loadingOverlay = document.getElementById('loading-overlay');
 
         // --- INICIALIZAÇÃO ---
         document.addEventListener('DOMContentLoaded', () => {
-            // NOVA LÓGICA: Verifica se a URL contém o parâmetro de admin
-            const urlParams = new URLSearchParams(window.location.search);
-            isAdmin = urlParams.get('admin') === 'true';
-            
-            initializeFirebase();
+            loadData();
             setupEventListeners();
-            
-            // NOVA LÓGICA: Aplica o modo de apenas leitura se não for admin
-            if (!isAdmin) {
-                document.body.classList.add('read-only-mode');
-                document.getElementById('tournament-mode-indicator').textContent = "Acompanhe os resultados em tempo real!";
-            } else {
-                document.getElementById('admin-mode-indicator').classList.remove('hidden');
-            }
         });
-
-        async function initializeFirebase() {
-            try {
-                // SUA CONFIGURAÇÃO DO FIREBASE
-                const firebaseConfig = {
-                    apiKey: "AIzaSyADVsS_wCzlQv-mVRLf_tZOq7suWavbYTw",
-                    authDomain: "copa-play-ps4.firebaseapp.com",
-                    projectId: "copa-play-ps4",
-                    storageBucket: "copa-play-ps4.appspot.com", // Corrigido para .appspot.com
-                    messagingSenderId: "204861096387",
-                    appId: "1:204861096387:web:69fdef9e45f54eae487d76"
-                };
-                
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                
-                // O documento agora é fixo, representando um único torneio por vez
-                tournamentDocRef = doc(db, "tournaments", "current");
-
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        console.log("Usuário autenticado:", user.uid);
-                        setupFirestoreListener();
-                    } else {
-                        console.log("Nenhum usuário. Tentando autenticar anonimamente...");
-                        try {
-                            await signInAnonymously(auth);
-                        } catch (error) {
-                            console.error("Erro na autenticação anônima:", error);
-                            loadingOverlay.innerHTML = '<p class="text-red-600">Falha na autenticação. Recarregue a página.</p>';
-                        }
-                    }
-                });
-
-            } catch (error) {
-                console.error("Erro ao inicializar o Firebase:", error);
-                loadingOverlay.innerHTML = '<p class="text-red-600">Erro crítico ao conectar com a base de dados.</p>';
-            }
-        }
-
-        function setupFirestoreListener() {
-            unsubscribeFirestore();
-            unsubscribeFirestore = onSnapshot(tournamentDocRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    tournamentData = {
-                        groups: data.groups || {},
-                        matches: data.matches || {},
-                        knockout: data.knockout || {},
-                    };
-                    console.log("Dados do Firestore carregados.");
-                } else {
-                    console.log("Nenhum torneio ativo encontrado. Iniciando com dados vazios.");
-                    tournamentData = { groups: {}, matches: {}, knockout: {} };
-                }
-                
-                try {
-                    renderAll();
-                } catch (renderError) {
-                    console.error("Erro fatal durante a renderização:", renderError);
-                    document.body.innerHTML = `<div class="text-center p-8 text-red-600">Ocorreu um erro grave ao exibir o torneio. Por favor, tente <button onclick="resetTournament()" class="underline font-bold">resetar os dados</button>. Erro: ${renderError.message}</div>`;
-                } finally {
-                     loadingOverlay.style.display = 'none';
-                }
-            }, (error) => {
-                console.error("Erro ao ouvir dados do Firestore: ", error);
-                loadingOverlay.innerHTML = `<p class="text-red-600">Erro de conexão com a base de dados: ${error.message}</p>`;
-            });
-        }
 
         function setupEventListeners() {
             document.getElementById('add-group-btn').addEventListener('click', addGroup);
             document.getElementById('advance-teams-btn').addEventListener('click', advanceTeamsToKnockout);
-            document.getElementById('reset-tournament-btn').addEventListener('click', () => {
-                 showConfirmationModal("Tem certeza que deseja resetar todo o torneio? Todos os dados online serão perdidos.", resetTournament);
-            });
+            document.getElementById('reset-tournament-btn').addEventListener('click', resetTournament);
             document.getElementById('groups-container').addEventListener('input', handleGroupCardInput);
             document.getElementById('groups-container').addEventListener('click', handleGroupCardClick);
             document.getElementById('knockout-container').addEventListener('input', handleKnockoutInput);
             document.getElementById('confirm-cancel-btn').addEventListener('click', closeConfirmationModal);
             document.getElementById('confirm-action-btn').addEventListener('click', () => { if (confirmCallback) confirmCallback(); closeConfirmationModal(); });
+
+            // Listeners do modal de logo
             document.getElementById('logo-file-input').addEventListener('change', previewLogo);
             document.getElementById('cancel-logo-upload-btn').addEventListener('click', closeLogoUploadModal);
             document.getElementById('confirm-logo-upload-btn').addEventListener('click', saveLogo);
+            
+            // A funcionalidade de upload do logo principal foi removida.
         }
         
         function resetUIState() {
@@ -284,56 +174,100 @@
             renderAll();
         }
 
-        // --- LÓGICA DE DADOS (FIRESTORE) ---
+        // --- LÓGICA DE DADOS (LOCALSTORAGE) ---
         function saveData() {
-            // NOVA VERIFICAÇÃO: Só salva se for admin
-            if (!isAdmin) {
-                console.warn("Modo somente leitura. Alterações não serão salvas.");
-                return;
+            try {
+                localStorage.setItem('digitalTournamentData', JSON.stringify(tournamentData));
+            } catch (error) {
+                console.error("Erro ao salvar dados no localStorage:", error);
+                showNotification("Não foi possível salvar os dados localmente. O armazenamento pode estar cheio.", "error");
             }
-            clearTimeout(saveDataDebounceTimer);
-            saveDataDebounceTimer = setTimeout(async () => {
-                if (!tournamentDocRef) {
-                    console.warn("Referência do Firestore não está pronta. Salvamento cancelado.");
-                    return;
-                }
-                try {
-                    await setDoc(tournamentDocRef, tournamentData, { merge: true });
-                    console.log("Dados salvos no Firestore.");
-                } catch (error) {
-                    console.error("Erro ao salvar dados no Firestore:", error);
-                    showNotification("Não foi possível salvar os dados. Verifique sua conexão.", "error");
-                }
-            }, 500);
         }
 
-        async function resetTournament() {
-            // NOVA VERIFICAÇÃO: Só reseta se for admin
-            if (!isAdmin) return;
-            
+        function loadData() {
             loadingOverlay.style.display = 'flex';
-            if (tournamentDocRef) {
-                // Em vez de deletar o documento, apenas limpamos seu conteúdo
-                await setDoc(tournamentDocRef, { groups: {}, matches: {}, knockout: {} });
+            try {
+                const data = localStorage.getItem('digitalTournamentData');
+                if (data) {
+                    tournamentData = JSON.parse(data);
+                    
+                    // --- MIGRAÇÃO DE DADOS ---
+                    let needsSave = false;
+                    if (tournamentData.groups) {
+                        const findTeamObject = (teamName) => {
+                            for (const group of Object.values(tournamentData.groups)) {
+                                const team = group.teams.find(t => t.name === teamName);
+                                if (team) return team;
+                            }
+                            return { name: teamName, logo: null };
+                        };
+
+                        Object.values(tournamentData.groups).forEach(group => {
+                            if (group.teams && group.teams.length > 0 && typeof group.teams[0] === 'string') {
+                                needsSave = true;
+                                group.teams = group.teams.map(teamName => ({ name: teamName, logo: null }));
+                            }
+                        });
+
+                        if (tournamentData.matches) {
+                            Object.values(tournamentData.matches).forEach(matchList => {
+                                matchList.forEach(match => {
+                                    if (typeof match.teamA === 'string') { needsSave = true; match.teamA = findTeamObject(match.teamA); }
+                                    if (typeof match.teamB === 'string') { needsSave = true; match.teamB = findTeamObject(match.teamB); }
+                                });
+                            });
+                        }
+                        
+                        if (tournamentData.knockout) {
+                            ['quarterFinals', 'semiFinals', 'final'].forEach(round => {
+                                if (tournamentData.knockout[round]) {
+                                    tournamentData.knockout[round].forEach(match => {
+                                        if (match.teamA && typeof match.teamA === 'string') { needsSave = true; match.teamA = findTeamObject(match.teamA); }
+                                        if (match.teamB && typeof match.teamB === 'string') { needsSave = true; match.teamB = findTeamObject(match.teamB); }
+                                    });
+                                }
+                            });
+                        }
+                        if(needsSave) saveData();
+                    }
+                } else {
+                    tournamentData = { groups: {}, matches: {}, knockout: {} };
+                }
+
+                // A funcionalidade de carregar o logo principal do localStorage foi removida.
+                // A imagem agora é fixa no HTML.
+
+            } catch (error) {
+                 console.error("Erro ao carregar ou migrar dados do localStorage:", error);
+                 tournamentData = { groups: {}, matches: {}, knockout: {} };
             }
-            resetUIState();
-            showNotification("O torneio foi resetado.", "success");
-            loadingOverlay.style.display = 'none';
+            
+            try {
+                renderAll();
+            } catch (renderError) {
+                console.error("Erro fatal durante a renderização:", renderError);
+                document.body.innerHTML = `<div class="text-center p-8 text-red-600">Ocorreu um erro grave ao exibir o torneio. Por favor, tente <button onclick="localStorage.clear(); window.location.reload();" class="underline font-bold">resetar os dados</button>. Erro: ${renderError.message}</div>`;
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
         }
         
-        // --- RENDERIZAÇÃO E LÓGICA DO TORNEIO (O restante do código permanece o mesmo) ---
-        // ... (o restante do script JavaScript que você já tinha, sem alterações) ...
-        // Cole o restante do script original a partir daqui.
-        // A lógica de renderização, manipulação de eventos, etc., não precisa mudar.
-        // Apenas as funções que modificam dados (saveData, resetTournament) foram protegidas.
+        function resetTournament() {
+             showConfirmationModal("Tem certeza que deseja resetar todo o torneio? Todos os dados locais serão perdidos.", () => {
+                 localStorage.removeItem('digitalTournamentData');
+                 // Não removemos mais o logo, pois é fixo.
+                 document.getElementById('main-logo-img').src = 'COPA PS4/imagem/logo.png'; // Restaura o logo padrão
+                 resetUIState();
+                 showNotification("O torneio foi resetado.", "success");
+             });
+        }
         
+        // --- RENDERIZAÇÃO E LÓGICA DO TORNEIO ---
         function renderAll() {
             isKnockoutGenerated = tournamentData.knockout && (tournamentData.knockout.quarterFinals?.length > 0 || tournamentData.knockout.semiFinals?.length > 0);
             if (tournamentData.groups && Object.keys(tournamentData.groups).length > 0) {
                 document.getElementById('group-stage').style.display = 'block';
-                if (isAdmin) { // Só mostra o botão de avançar para o admin
-                    document.getElementById('advance-btn-container').style.display = 'block';
-                }
+                document.getElementById('advance-btn-container').style.display = 'block';
             } else {
                  document.getElementById('group-stage').style.display = 'none';
                  document.getElementById('advance-btn-container').style.display = 'none';
@@ -349,7 +283,6 @@
         }
 
         function showConfirmationModal(message, callback) {
-            if (!isAdmin) return;
             document.getElementById('confirmation-message').textContent = message;
             confirmCallback = callback;
             document.getElementById('confirmation-modal').style.display = 'flex';
@@ -370,7 +303,6 @@
         }
 
         function addGroup() {
-            if (!isAdmin) return;
             const groupNameInput = document.getElementById('group-name-input');
             const teamNamesInput = document.getElementById('team-names-input');
             const groupKey = groupNameInput.value.trim().toUpperCase().replace("GRUPO ", "");
@@ -383,14 +315,555 @@
             document.getElementById('group-stage').style.display = 'block';
             document.getElementById('advance-btn-container').style.display = 'block';
             if(!tournamentData.groups) tournamentData.groups = {};
-            
-            // O restante da função addGroup e todas as outras funções de manipulação de dados
-            // e renderização devem ser coladas aqui do script original.
-            // O importante é que a função `saveData()` já tem a trava de `isAdmin`.
+            tournamentData.groups[groupKey] = { name: `Grupo ${groupKey}`, teams: teams };
+            generateGroupMatches(groupKey);
+            saveData();
+            renderGroups();
+            groupNameInput.value = ''; teamNamesInput.value = ''; groupNameInput.focus();
+        }
+
+        function generateGroupMatches(groupKey) {
+            const { teams } = tournamentData.groups[groupKey];
+            if(!tournamentData.matches) tournamentData.matches = {};
+            tournamentData.matches[groupKey] = [];
+            for (let i = 0; i < teams.length; i++) {
+                for (let j = i + 1; j < teams.length; j++) {
+                    tournamentData.matches[groupKey].push({ teamA: teams[i], teamB: teams[j], scoreA: null, scoreB: null });
+                }
+            }
         }
         
-        // (COLE O RESTANTE DO SCRIPT ORIGINAL AQUI)
+        function calculateStandings(groupKey) {
+            const teams = (tournamentData.groups[groupKey] && tournamentData.groups[groupKey].teams) ? tournamentData.groups[groupKey].teams : [];
+            const matches = (tournamentData.matches && tournamentData.matches[groupKey]) ? tournamentData.matches[groupKey] : [];
+            let standings = teams.map(team => ({ name: team.name, logo: team.logo, P: 0, J: 0, V: 0, E: 0, D: 0, GP: 0, GC: 0, SG: 0 }));
+            matches.forEach(match => {
+                if (match.scoreA === null || match.scoreB === null || isNaN(match.scoreA) || isNaN(match.scoreB)) return;
+                const teamA = standings.find(t => t.name === match.teamA.name);
+                const teamB = standings.find(t => t.name === match.teamB.name);
+                if(!teamA || !teamB) return;
+                teamA.J++; teamB.J++;
+                teamA.GP += +match.scoreA; teamB.GP += +match.scoreB;
+                teamA.GC += +match.scoreB; teamB.GC += +match.scoreA;
+                teamA.SG = teamA.GP - teamA.GC; teamB.SG = teamB.GP - teamB.GC;
+                if (+match.scoreA > +match.scoreB) { teamA.V++; teamB.D++; teamA.P += 3; } 
+                else if (+match.scoreB > +match.scoreA) { teamB.V++; teamA.D++; teamB.P += 3; } 
+                else { teamA.E++; teamB.E++; teamA.P += 1; teamB.P += 1; }
+            });
+            return standings.sort((a, b) => b.P - a.P || b.SG - a.SG || b.GP - a.GP || a.name.localeCompare(b.name));
+        }
 
+        function renderGroups() {
+            const container = document.getElementById('groups-container');
+            container.innerHTML = '';
+            const sortedGroupKeys = tournamentData.groups ? Object.keys(tournamentData.groups).sort() : [];
+            
+            for (const groupKey of sortedGroupKeys) {
+                const group = tournamentData.groups[groupKey];
+                const standings = calculateStandings(groupKey);
+                const matches = (tournamentData.matches && tournamentData.matches[groupKey]) ? tournamentData.matches[groupKey] : [];
+                const groupCard = document.createElement('div');
+                groupCard.className = 'bg-white p-5 rounded-xl shadow-lg border border-gray-200';
+                groupCard.dataset.groupKey = groupKey;
+                const editDisabled = isKnockoutGenerated ? 'disabled' : '';
+                const editClasses = isKnockoutGenerated ? 'opacity-50 cursor-not-allowed' : 'text-gray-400 hover:text-red-600';
+                
+                const teamLogo = (team) => `<img src="${team.logo || `https://placehold.co/24x24/cccccc/000000?text=${team.name.charAt(0)}`}" alt="Escudo ${team.name}" class="w-6 h-6 rounded-full object-cover mr-2 inline-block">`;
+                
+                let matchesHtml = matches.map((match, index) => {
+                    const currentTeamA = group.teams.find(t => t.name === match.teamA.name) || match.teamA;
+                    const currentTeamB = group.teams.find(t => t.name === match.teamB.name) || match.teamB;
+                    return `
+                    <div class="flex items-center justify-between space-x-2 py-2 border-b border-gray-200 last:border-b-0">
+                        <span class="flex-1 text-right flex items-center justify-end">
+                            <span class="truncate">${currentTeamA.name}</span>
+                            ${teamLogo(currentTeamA)}
+                        </span>
+                        <input type="number" min="0" class="score-input bg-gray-100 border border-gray-300 w-12 text-center rounded" data-match-index="${index}" data-team="A" value="${match.scoreA !== null ? match.scoreA : ''}" ${editDisabled}>
+                        <span class="font-bold">vs</span>
+                        <input type="number" min="0" class="score-input bg-gray-100 border border-gray-300 w-12 text-center rounded" data-match-index="${index}" data-team="B" value="${match.scoreB !== null ? match.scoreB : ''}" ${editDisabled}>
+                        <span class="flex-1 text-left flex items-center">
+                            ${teamLogo(currentTeamB)}
+                            <span class="truncate">${currentTeamB.name}</span>
+                        </span>
+                    </div>`;
+                }).join('');
+                
+                 groupCard.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="group-title-container text-xl font-bold text-gray-900">${group.name}</div>
+                        <div class="flex items-center space-x-1">
+                            <button class="edit-group-name-btn p-1 ${editClasses}" data-group-key="${groupKey}" ${editDisabled} title="Editar Nome do Grupo">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.379-8.379-2.828-2.828z" /></svg>
+                            </button>
+                             <button class="delete-group-btn p-1 ${editClasses}" data-group-key="${groupKey}" ${editDisabled} title="Excluir Grupo">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto mb-4">
+                        <table class="w-full text-sm text-left">
+                             <thead class="bg-gray-100 text-gray-600 uppercase">
+                                <tr>
+                                    <th class="px-4 py-2">Time</th>
+                                    <th class="px-2 py-2 text-center">P</th>
+                                    <th class="px-2 py-2 text-center">J</th>
+                                    <th class="px-2 py-2 text-center">V</th>
+                                    <th class="px-2 py-2 text-center">E</th>
+                                    <th class="px-2 py-2 text-center">D</th>
+                                    <th class="px-2 py-2 text-center">SG</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${standings.map((t, i) => `<tr class="border-b ${i < 2 ? 'bg-green-50' : ''}">
+                                    <td class="px-4 py-2 font-medium">
+                                        <div class="flex justify-between items-center group">
+                                            <div class="flex items-center">
+                                                ${teamLogo(t)}
+                                                <span>${i + 1}. ${t.name}</span>
+                                            </div>
+                                            <div class="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button class="add-team-logo-btn p-1 ${editClasses}" data-team-name="${t.name}" ${editDisabled} title="Adicionar/Editar Escudo">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" /></svg>
+                                                </button>
+                                                <button class="edit-team-name-btn p-1 ${editClasses}" data-team-name="${t.name}" ${editDisabled} title="Editar Nome do Time">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.379-8.379-2.828-2.828z" /></svg>
+                                                </button>
+                                                <button class="delete-team-btn p-1 ${editClasses}" data-team-name="${t.name}" ${editDisabled} title="Excluir Time">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-2 py-2 text-center font-bold">${t.P}</td>
+                                    <td class="px-2 py-2 text-center">${t.J}</td>
+                                    <td class="px-2 py-2 text-center">${t.V}</td>
+                                    <td class="px-2 py-2 text-center">${t.E}</td>
+                                    <td class="px-2 py-2 text-center">${t.D}</td>
+                                    <td class="px-2 py-2 text-center">${t.SG}</td>
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-md mb-2 text-center">Partidas</h4>
+                        ${matchesHtml}
+                    </div>
+                    <div class="add-team-form mt-4 flex space-x-2 ${isKnockoutGenerated ? 'hidden' : ''}">
+                        <input type="text" class="new-team-name-input flex-grow bg-gray-100 border border-gray-300 text-sm rounded-lg p-2 focus:ring-red-500 focus:border-red-500" placeholder="Adicionar novo time">
+                        <button class="add-team-btn bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">+</button>
+                    </div>`;
+                container.appendChild(groupCard);
+            }
+        }
+
+        function handleGroupCardInput(e) {
+            if (!e.target.classList.contains('score-input')) return;
+            const groupKey = e.target.closest('[data-group-key]').dataset.groupKey;
+            const matchIndex = parseInt(e.target.dataset.matchIndex, 10);
+            const team = e.target.dataset.team;
+            const score = parseInt(e.target.value, 10);
+            
+            const match = tournamentData.matches[groupKey][matchIndex];
+            if (team === 'A') match.scoreA = isNaN(score) ? null : score;
+            else match.scoreB = isNaN(score) ? null : score;
+            
+            saveData();
+            renderGroups();
+        }
+
+        function handleGroupCardClick(e) {
+            const target = e.target.closest('button');
+            if (!target) return;
+
+            const groupKey = target.closest('[data-group-key]').dataset.groupKey;
+
+            if (target.classList.contains('edit-group-name-btn')) {
+                const newName = prompt("Digite o novo nome para o grupo:", tournamentData.groups[groupKey].name);
+                if (newName && newName.trim() !== "") {
+                    tournamentData.groups[groupKey].name = newName.trim();
+                    saveData();
+                    renderGroups();
+                }
+            } else if (target.classList.contains('delete-group-btn')) {
+                showConfirmationModal(`Tem certeza que deseja excluir o ${tournamentData.groups[groupKey].name}?`, () => {
+                    delete tournamentData.groups[groupKey];
+                    delete tournamentData.matches[groupKey];
+                    saveData();
+                    renderAll();
+                });
+            } else if (target.classList.contains('add-team-btn')) {
+                const input = target.previousElementSibling;
+                const newTeamName = input.value.trim();
+                if (newTeamName) {
+                    addTeamToGroup(groupKey, newTeamName);
+                    input.value = '';
+                } else {
+                    showNotification('O nome do novo time não pode estar vazio.', 'error');
+                }
+            } else if (target.classList.contains('edit-team-name-btn')) {
+                const oldName = target.dataset.teamName;
+                const newName = prompt(`Digite o novo nome para "${oldName}":`, oldName);
+                if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
+                    editTeamName(groupKey, oldName, newName.trim());
+                }
+            } else if (target.classList.contains('delete-team-btn')) {
+                const teamName = target.dataset.teamName;
+                showConfirmationModal(`Tem certeza que deseja excluir o time "${teamName}"? Todas as suas partidas no grupo serão removidas.`, () => {
+                    deleteTeamFromGroup(groupKey, teamName);
+                });
+            } else if (target.classList.contains('add-team-logo-btn')) {
+                const teamName = target.dataset.teamName;
+                openLogoUploadModal(groupKey, teamName);
+            }
+        }
+        
+        // --- LÓGICA DO MODAL DE LOGO ---
+        const logoUploadModal = document.getElementById('logo-upload-modal');
+        const logoPreview = document.getElementById('logo-preview');
+        const logoFileInput = document.getElementById('logo-file-input');
+
+        function openLogoUploadModal(groupKey, teamName) {
+            logoUploadModal.dataset.groupKey = groupKey;
+            logoUploadModal.dataset.teamName = teamName;
+            
+            const team = tournamentData.groups[groupKey].teams.find(t => t.name === teamName);
+            logoPreview.src = team.logo || 'https://placehold.co/96x96/efefef/333333?text=?'; // Placeholder
+            logoFileInput.value = ''; // Reseta o input de arquivo
+            
+            logoUploadModal.style.display = 'flex';
+        }
+
+        function closeLogoUploadModal() {
+            logoUploadModal.style.display = 'none';
+        }
+
+        function previewLogo(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    logoPreview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveLogo() {
+            const { groupKey, teamName } = logoUploadModal.dataset;
+            const newLogoSrc = logoPreview.src;
+
+            // Não salva o placeholder, considera como "remover logo"
+            if (newLogoSrc.startsWith('https://placehold.co')) {
+                 setTeamLogo(groupKey, teamName, null);
+            } else {
+                setTeamLogo(groupKey, teamName, newLogoSrc);
+            }
+            closeLogoUploadModal();
+        }
+
+
+        function addTeamToGroup(groupKey, newTeamName) {
+            const group = tournamentData.groups[groupKey];
+            if (group.teams.some(t => t.name === newTeamName)) {
+                showNotification(`O time "${newTeamName}" já existe neste grupo.`, 'error');
+                return;
+            }
+            group.teams.push({ name: newTeamName, logo: null });
+            generateGroupMatches(groupKey); // Regenerate matches for the group
+            saveData();
+            renderGroups();
+        }
+
+        function editTeamName(groupKey, oldName, newName) {
+            const group = tournamentData.groups[groupKey];
+            const matches = tournamentData.matches[groupKey];
+
+            if (group.teams.some(t => t.name === newName)) {
+                showNotification(`O time "${newName}" já existe neste grupo.`, 'error');
+                return;
+            }
+
+            const team = group.teams.find(t => t.name === oldName);
+            if (team) {
+                team.name = newName;
+            }
+
+            matches.forEach(match => {
+                if (match.teamA.name === oldName) match.teamA.name = newName;
+                if (match.teamB.name === oldName) match.teamB.name = newName;
+            });
+
+            saveData();
+            renderAll(); // Use renderAll to update knockout if necessary
+        }
+        
+        function setTeamLogo(groupKey, teamName, logoDataUrl) {
+            const group = tournamentData.groups[groupKey];
+            const team = group.teams.find(t => t.name === teamName);
+            if (team) {
+                team.logo = logoDataUrl;
+            }
+
+            // Atualiza o logo em todas as partidas existentes
+            if (tournamentData.matches[groupKey]) {
+                tournamentData.matches[groupKey].forEach(match => {
+                    if (match.teamA.name === teamName) match.teamA.logo = logoDataUrl;
+                    if (match.teamB.name === teamName) match.teamB.logo = logoDataUrl;
+                });
+            }
+            
+            saveData();
+            renderAll();
+        }
+
+        function deleteTeamFromGroup(groupKey, teamNameToDelete) {
+            const group = tournamentData.groups[groupKey];
+            if (group.teams.length <= 2) {
+                showNotification('Um grupo precisa ter no mínimo 2 times. Se desejar, exclua o grupo inteiro.', 'error');
+                return;
+            }
+
+            // Remove team from the list
+            group.teams = group.teams.filter(t => t.name !== teamNameToDelete);
+            
+            // Regenerate matches for the group
+            generateGroupMatches(groupKey);
+
+            saveData();
+            renderGroups();
+        }
+
+        function advanceTeamsToKnockout() {
+            if (isKnockoutGenerated) return showNotification("A fase eliminatória já foi gerada.", "error");
+
+            const allGroupKeys = Object.keys(tournamentData.groups).sort();
+            if (allGroupKeys.length !== 2 && allGroupKeys.length !== 4) {
+                return showNotification("Para gerar as eliminatórias automaticamente, crie exatamente 2 ou 4 grupos.", "error");
+            }
+
+            let qualifiedTeams = [];
+            for (const groupKey of allGroupKeys) {
+                const standings = calculateStandings(groupKey);
+                if (standings.length < 2) {
+                    return showNotification(`O Grupo ${groupKey} não tem times suficientes ou as partidas não foram preenchidas.`, "error");
+                }
+                qualifiedTeams.push(standings[0]); // Push the full team object
+                qualifiedTeams.push(standings[1]);
+            }
+            
+            tournamentData.knockout = { quarterFinals: [], semiFinals: [], final: [] };
+
+            if (qualifiedTeams.length === 8) { // 4 Groups -> Start with Quarter-finals
+                tournamentData.knockout.quarterFinals.push({ teamA: qualifiedTeams[0], teamB: qualifiedTeams[3], scoreA: null, scoreB: null }); // A1 vs B2
+                tournamentData.knockout.quarterFinals.push({ teamA: qualifiedTeams[2], teamB: qualifiedTeams[1], scoreA: null, scoreB: null }); // B1 vs A2
+                tournamentData.knockout.quarterFinals.push({ teamA: qualifiedTeams[4], teamB: qualifiedTeams[7], scoreA: null, scoreB: null }); // C1 vs D2
+                tournamentData.knockout.quarterFinals.push({ teamA: qualifiedTeams[6], teamB: qualifiedTeams[5], scoreA: null, scoreB: null }); // D1 vs C2
+            } else if (qualifiedTeams.length === 4) { // 2 Groups -> Start with Semi-finals
+                tournamentData.knockout.semiFinals.push({ teamA: qualifiedTeams[0], teamB: qualifiedTeams[3], scoreA: null, scoreB: null }); // A1 vs B2
+                tournamentData.knockout.semiFinals.push({ teamA: qualifiedTeams[2], teamB: qualifiedTeams[1], scoreA: null, scoreB: null }); // B1 vs A2
+            }
+
+            isKnockoutGenerated = true;
+            saveData();
+            renderAll();
+        }
+        
+        function updateKnockoutStages() {
+            const { knockout } = tournamentData;
+            if (!knockout) return;
+
+            // From Quarters to Semis
+            if (knockout.quarterFinals && knockout.quarterFinals.length > 0) {
+                const quarterWinners = knockout.quarterFinals.map(match => 
+                    (match.scoreA !== null && match.scoreB !== null && +match.scoreA !== +match.scoreB) 
+                    ? (+match.scoreA > +match.scoreB ? match.teamA : match.teamB) 
+                    : null
+                );
+
+                const numSemiFinals = knockout.quarterFinals.length / 2;
+                for (let i = 0; i < numSemiFinals; i++) {
+                    const teamA = quarterWinners[i * 2];
+                    const teamB = quarterWinners[i * 2 + 1];
+                    
+                    if (!knockout.semiFinals[i]) {
+                        knockout.semiFinals[i] = { teamA: null, teamB: null, scoreA: null, scoreB: null };
+                    }
+                    
+                    if ((knockout.semiFinals[i].teamA?.name !== teamA?.name) || (knockout.semiFinals[i].teamB?.name !== teamB?.name)) {
+                        knockout.semiFinals[i].teamA = teamA;
+                        knockout.semiFinals[i].teamB = teamB;
+                        knockout.semiFinals[i].scoreA = null;
+                        knockout.semiFinals[i].scoreB = null;
+                    }
+                }
+            }
+
+            // From Semis to Final
+            if (knockout.semiFinals && knockout.semiFinals.length > 0) {
+                const semiWinners = knockout.semiFinals.map(match => 
+                    (match.scoreA !== null && match.scoreB !== null && +match.scoreA !== +match.scoreB) 
+                    ? (+match.scoreA > +match.scoreB ? match.teamA : match.teamB) 
+                    : null
+                );
+                
+                if (semiWinners.length >= 2) {
+                    const finalTeamA = semiWinners[0];
+                    const finalTeamB = semiWinners[1];
+
+                    if (!knockout.final[0]) {
+                        knockout.final[0] = { teamA: null, teamB: null, scoreA: null, scoreB: null };
+                    }
+
+                    if ((knockout.final[0].teamA?.name !== finalTeamA?.name) || (knockout.final[0].teamB?.name !== finalTeamB?.name)) {
+                        knockout.final[0].teamA = finalTeamA;
+                        knockout.final[0].teamB = finalTeamB;
+                        knockout.final[0].scoreA = null;
+                        knockout.final[0].scoreB = null;
+                    }
+                }
+            }
+        }
+        
+        function renderKnockout() {
+            updateKnockoutStages();
+            
+            const container = document.getElementById('knockout-container');
+            container.innerHTML = '';
+            
+            const rounds = ['quarterFinals', 'semiFinals', 'final'];
+            const roundTitles = { quarterFinals: 'Quartas de Final', semiFinals: 'Semifinais', final: 'Final' };
+            const teamLogo = (team) => `<img src="${team.logo || `https://placehold.co/24x24/cccccc/000000?text=${team.name.charAt(0)}`}" alt="Escudo ${team.name}" class="w-6 h-6 rounded-full object-cover mr-2">`;
+            
+            for (const roundName of rounds) {
+                const roundData = tournamentData.knockout[roundName] || [];
+                if(roundData.length === 0) continue;
+
+                const roundDiv = document.createElement('div');
+                roundDiv.className = 'round flex flex-col justify-center space-y-12';
+                roundDiv.innerHTML = `<h3 class="text-xl font-bold text-center">${roundTitles[roundName]}</h3>`;
+
+                roundData.forEach((match, index) => {
+                    const winner = (match.scoreA !== null && match.scoreB !== null && +match.scoreA !== +match.scoreB) ? (+match.scoreA > +match.scoreB ? match.teamA : match.teamB) : null;
+                    const teamADisplay = match.teamA ? `<div class="flex items-center">${teamLogo(match.teamA)} <span class="truncate">${match.teamA.name}</span></div>` : 'A definir';
+                    const teamBDisplay = match.teamB ? `<div class="flex items-center">${teamLogo(match.teamB)} <span class="truncate">${match.teamB.name}</span></div>` : 'A definir';
+
+                    roundDiv.innerHTML += `
+                        <div class="matchup bg-white p-3 rounded-lg shadow w-64" data-round="${roundName}" data-match-index="${index}">
+                             <div class="flex items-center justify-between">
+                                 <div class="flex-1 ${winner && winner.name === match.teamA?.name ? 'winner' : ''}">${teamADisplay}</div>
+                                <input type="number" min="0" class="knockout-score-input w-12 text-center bg-gray-100 border rounded" data-team="A" value="${match.scoreA !== null ? match.scoreA : ''}" ${!match.teamA || !match.teamB ? 'disabled' : ''}>
+                             </div>
+                             <div class="text-center text-xs text-gray-500 my-1">vs</div>
+                            <div class="flex items-center justify-between">
+                                 <div class="flex-1 ${winner && winner.name === match.teamB?.name ? 'winner' : ''}">${teamBDisplay}</div>
+                                <input type="number" min="0" class="knockout-score-input w-12 text-center bg-gray-100 border rounded" data-team="B" value="${match.scoreB !== null ? match.scoreB : ''}" ${!match.teamA || !match.teamB ? 'disabled' : ''}>
+                             </div>
+                        </div>
+                    `;
+                });
+                container.appendChild(roundDiv);
+            }
+
+            // Check for champion
+            const finalMatch = tournamentData.knockout.final && tournamentData.knockout.final[0];
+            if (finalMatch && finalMatch.scoreA !== null && finalMatch.scoreB !== null && +finalMatch.scoreA !== +finalMatch.scoreB) {
+                const champion = +finalMatch.scoreA > +finalMatch.scoreB ? finalMatch.teamA : finalMatch.teamB;
+                document.getElementById('champion-name').innerHTML = `<div class="flex items-center justify-center">${teamLogo(champion)}<span>${champion.name}</span></div>`;
+                document.getElementById('champion-section').style.display = 'block';
+                triggerConfetti();
+            } else {
+                 document.getElementById('champion-section').style.display = 'none';
+                 if(confettiAnimationId) cancelAnimationFrame(confettiAnimationId);
+            }
+        }
+
+        function handleKnockoutInput(e) {
+             if (!e.target.classList.contains('knockout-score-input')) return;
+             const matchupDiv = e.target.closest('.matchup');
+             const round = matchupDiv.dataset.round;
+             const matchIndex = parseInt(matchupDiv.dataset.matchIndex, 10);
+             const team = e.target.dataset.team;
+             const score = parseInt(e.target.value, 10);
+             
+             const match = tournamentData.knockout[round][matchIndex];
+             if (team === 'A') match.scoreA = isNaN(score) ? null : score;
+             else match.scoreB = isNaN(score) ? null : score;
+             
+             saveData();
+             renderKnockout();
+        }
+
+        function triggerConfetti() {
+            if (confettiAnimationId) {
+                cancelAnimationFrame(confettiAnimationId);
+            }
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            const particleCount = 200;
+            const colors = ["#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e", "#14b8a6", "#06b6d4", "#3b82f6", "#8b5cf6"];
+
+            function setupCanvas() {
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+            }
+
+            class ConfettiParticle {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height - canvas.height;
+                    this.size = Math.random() * 10 + 5;
+                    this.speed = Math.random() * 5 + 2;
+                    this.gravity = 0.1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                    this.rotation = Math.random() * 360;
+                    this.rotationSpeed = Math.random() * 4 - 2;
+                }
+
+                update() {
+                    this.y += this.speed;
+                    this.speed += this.gravity;
+                    this.x += Math.sin(this.y / 20) * 2;
+                    this.rotation += this.rotationSpeed;
+                    if (this.y > canvas.height) {
+                        this.y = -this.size * 2;
+                        this.x = Math.random() * canvas.width;
+                        this.speed = Math.random() * 5 + 2;
+                    }
+                }
+
+                draw() {
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(this.rotation * Math.PI / 180);
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size * 0.7);
+                    ctx.restore();
+                }
+            }
+            
+            function initConfetti() {
+                setupCanvas();
+                particles = [];
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push(new ConfettiParticle());
+                }
+            }
+
+            function animateConfetti() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+                confettiAnimationId = requestAnimationFrame(animateConfetti);
+            }
+
+            initConfetti();
+            animateConfetti();
+            window.addEventListener('resize', initConfetti, { passive: true });
+        }
     </script>
 </body>
 </html>
